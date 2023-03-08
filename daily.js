@@ -79,7 +79,7 @@ async function sleeqDigital(timeSheetDateToCheck) {
   const usersToNotify = [];
   harvestUsers.forEach((user) => {
     const timeReport = harvestTeamTimeReport.find((t) => t.user_id === user.id);
-    if (!timeReport || timeReport.total_hours < 8) {
+    if (!timeReport || timeReport.total_hours < process.env.MISSING_HOURS_THRESHOLD) {
       usersToNotify.push(user);
     }
   });
