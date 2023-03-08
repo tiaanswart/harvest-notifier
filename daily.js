@@ -159,7 +159,7 @@ async function slackNotify(usersToNotify, timeSheetDateToCheck) {
           'Content-Type': 'application/x-www-form-urlencoded',
           Accept: 'application/json',
           charset: 'utf-8',
-          Authorization: `Bearer xoxb-1648939262768-4875194024646-t39nKbIsfUomRiJTxpyEkxDQ`,
+          Authorization: `Bearer ${process.env.SLACK_TOKEN}`,
         },
       }
     );
