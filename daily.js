@@ -1,6 +1,7 @@
 const fetch = require('node-fetch');
 const moment = require('moment');
 async function getHarvestUsers(accountId, token, excludedUsers) {
+  console.log('getHarvestUsers');
   const response = await fetch('https://api.harvestapp.com/v2/users', {
     method: 'get',
     headers: {
@@ -16,6 +17,7 @@ async function getHarvestUsers(accountId, token, excludedUsers) {
   );
 }
 async function getHarvestTeamTimeReport(accountId, token, dateFrom, dateTo) {
+  console.log('getHarvestTeamTimeReport');
   const response = await fetch(
     `https://api.harvestapp.com/v2/reports/time/team?from=${dateFrom}&to=${dateTo}`,
     {
@@ -32,6 +34,7 @@ async function getHarvestTeamTimeReport(accountId, token, dateFrom, dateTo) {
   return data.results;
 }
 async function getSlackUsers(token) {
+  console.log('getSlackUsers');
   const response = await fetch('https://slack.com/api/users.list', {
     method: 'get',
     headers: {
@@ -43,6 +46,7 @@ async function getSlackUsers(token) {
   return data.members.filter((user) => !user.deleted && !user.is_bot);
 }
 async function dteligence(timeSheetDateToCheck) {
+  console.log('dteligence');
   const harvestUsers = await getHarvestUsers(
     process.env.DTELIGENCE_HARVEST_ACCOUNT_ID,
     process.env.HARVEST_TOKEN,
@@ -64,6 +68,7 @@ async function dteligence(timeSheetDateToCheck) {
   return usersToNotify;
 }
 async function sleeqDigital(timeSheetDateToCheck) {
+  console.log('sleeqDigital');
   const harvestUsers = await getHarvestUsers(
     process.env.SLEEQ_DIGITAL_HARVEST_ACCOUNT_ID,
     process.env.HARVEST_TOKEN,
@@ -85,6 +90,7 @@ async function sleeqDigital(timeSheetDateToCheck) {
   return usersToNotify;
 }
 async function slackNotify(usersToNotify, timeSheetDateToCheck) {
+  console.log('slackNotify');
   if (usersToNotify && usersToNotify.length) {
     const slackUsers = await getSlackUsers(process.env.SLACK_TOKEN);
     usersToNotify.forEach((user) => {
@@ -99,6 +105,10 @@ async function slackNotify(usersToNotify, timeSheetDateToCheck) {
         ? `@${slackUser.profile.display_name_normalized || slackUser.profile.real_name_normalized}`
         : fullName;
     });
+    console.log(
+      'usersToNotify',
+      usersToNotify.map((user) => user.slackUser)
+    );
     const slackBlocks = [
       {
         type: 'section',
@@ -163,6 +173,7 @@ async function slackNotify(usersToNotify, timeSheetDateToCheck) {
       }
     );
     const data = await response.json();
+    console.log('slackResponse', data);
   } else return;
 }
 async function app() {
