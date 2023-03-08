@@ -1,0 +1,49 @@
+{
+  "name": "Harvest Notifier",
+  "description": "Automatic notification script for Slack based on Harvest data",
+  "repository": "https://github.com/tiaanswart/harvest-notifier/",
+  "stack": "heroku-22",
+  "keywords": [
+    "harvest",
+    "notification",
+    "slack"
+  ],
+  "env": {
+    "DTELIGENCE_HARVEST_ACCOUNT_ID": {
+      "required": true
+    },
+    "SLEEQ_DIGITAL_HARVEST_ACCOUNT_ID": {
+      "required": true
+    },
+    "DTELIGENCE_EMAILS_WHITELIST": {
+      "description": "DTELIGENCE_EMAILS_WHITELIST is a variable that lists emails separated by commas, which don't need to be notified in Slack. For example, administrators or managers.",
+      "required": false
+    },
+    "SLEEQ_DIGITAL_EMAILS_WHITELIST": {
+      "description": "SLEEQ_DIGITAL_EMAILS_WHITELIST is a variable that lists emails separated by commas, which don't need to be notified in Slack. For example, administrators or managers.",
+      "required": false
+    },
+    "HARVEST_TOKEN": {
+      "required": true
+    },
+    "SLACK_TOKEN": {
+      "required": true
+    },
+    "MISSING_HOURS_THRESHOLD": {
+      "description": "MISSING_HOURS_THRESHOLD is a variable that indicates the minimum threshold of hours at which the employee will not be notified in Slack. For example, 2.5 or 4.",
+      "required": false
+    },
+    "SLACK_CHANNEL": {
+      "description": "SLACK_CHANNEL is a variable that is used to determine which channel the employee will be notified in Slack",
+      "required": true
+    }
+  },
+  "addons": [
+    "scheduler:standard"
+  ],
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ]
+}
