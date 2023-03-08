@@ -2,10 +2,10 @@
   "name": "harvest-notifier",
   "version": "1.0.0",
   "description": "An integration between Harvest and Slack that automatically reminds users who forget to mark their working hours in Harvest",
-  "main": "daily.js",
+  "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node daily.js"
+    "start": "node app.js"
   },
   "author": "tiaan.swart@sleeq.global",
   "license": "MIT",
