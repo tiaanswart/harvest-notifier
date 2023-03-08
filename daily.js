@@ -1,4 +1,3 @@
-#! /app/.heroku/node/bin/node
 const fetch = require('node-fetch');
 const moment = require('moment');
 async function getHarvestUsers(accountId, token, excludedUsers) {
