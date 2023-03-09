@@ -101,7 +101,7 @@ async function slackNotify(usersToNotify, timeSheetDateToCheck) {
             slackUser.profile.real_name_normalized.toLowerCase(),
             slackUser.profile.display_name_normalized.toLowerCase(),
           ].includes(fullName.toLowerCase()) ||
-          slackUser.profile.email.toLowerCase() === user.email.toLowerCase()
+          (slackUser.profile.email || '').toLowerCase() === user.email.toLowerCase()
       );
       user.slackUser = slackUser ? `<@${slackUser.id}>` : fullName;
     });
