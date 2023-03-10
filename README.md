@@ -13,8 +13,9 @@ There are 2 types of reports: Daily and Weekly.
 
 - Daily Report is generated on weekdays (except Monday) and shows those users who did not fill in their time for that day.
 
-(Coming soon)
-- Weekly Report is generated every Monday and shows those users who still need to report the required working hours for last week.
+- Weekly Report is generated every Friday and shows those users who still need to report the required working hours for the week.
+
+- Monthly Report is generated on the last day of the month and shows those users who still need to report the required working hours for the month.
 
 This integration allows to:
 - mention users in the Slack

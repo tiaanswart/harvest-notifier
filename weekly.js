@@ -61,7 +61,7 @@ async function dteligence(timeSheetDateToCheckFrom, timeSheetDateToCheckTo) {
   const usersToNotify = [];
   harvestUsers.forEach((user) => {
     const timeReport = harvestTeamTimeReport.find((t) => t.user_id === user.id);
-    if (!timeReport || timeReport.total_hours < 8) {
+    if (!timeReport || timeReport.total_hours < process.env.MISSING_HOURS_THRESHOLD * 5) {
       usersToNotify.push(user);
     }
   });
@@ -179,8 +179,8 @@ async function slackNotify(usersToNotify, timeSheetDateToCheckFrom, timeSheetDat
 async function app() {
   const weekday = moment().format('dddd');
   if (['Friday'].includes(weekday)) {
-    let timeSheetDateToCheckFrom = moment().startOf('week').add(1, 'days').format('YYYYMMDD');
-    let timeSheetDateToCheckTo = moment().format('YYYYMMDD');
+    let timeSheetDateToCheckFrom = moment().startOf('week').add(1, 'days').format('YYYY-MM-DD');
+    let timeSheetDateToCheckTo = moment().format('YYYY-MM-DD');
     const usersToNotify = [
       ...(await dteligence(timeSheetDateToCheckFrom, timeSheetDateToCheckTo)),
       ...(await sleeqDigital(timeSheetDateToCheckFrom, timeSheetDateToCheckTo)),
