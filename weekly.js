@@ -89,7 +89,7 @@ async function sleeqDigital(timeSheetDateToCheckFrom, timeSheetDateToCheckTo) {
   });
   return usersToNotify;
 }
-async function slackNotify(usersToNotify, timeSheetDateToCheckFrom) {
+async function slackNotify(usersToNotify, timeSheetDateToCheckFrom, timeSheetDateToCheckTo) {
   console.log('slackNotify');
   if (usersToNotify && usersToNotify.length) {
     const slackUsers = await getSlackUsers(process.env.SLACK_TOKEN);
