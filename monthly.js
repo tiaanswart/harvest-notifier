@@ -198,7 +198,7 @@ async function slackNotify(usersToNotify, timeSheetDateToCheckFrom, timeSheetDat
 }
 async function app() {
   if (moment().format('YYYY-MM-DD') === moment().endOf('month').format('YYYY-MM-DD')) {
-    let timeSheetDateToCheckFrom = moment().startOf('week').add(1, 'days').format('YYYY-MM-DD');
+    let timeSheetDateToCheckFrom = moment().startOf('month').format('YYYY-MM-DD');
     let timeSheetDateToCheckTo = moment().format('YYYY-MM-DD');
     const usersToNotify = [
       ...(await dteligence(timeSheetDateToCheckFrom, timeSheetDateToCheckTo)),
