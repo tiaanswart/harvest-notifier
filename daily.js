@@ -67,28 +67,6 @@ async function dteligence(timeSheetDateToCheck) {
   });
   return usersToNotify;
 }
-async function sleeqDigital(timeSheetDateToCheck) {
-  console.log('sleeqDigital');
-  const harvestUsers = await getHarvestUsers(
-    process.env.SLEEQ_DIGITAL_HARVEST_ACCOUNT_ID,
-    process.env.HARVEST_TOKEN,
-    process.env.SLEEQ_DIGITAL_EMAILS_WHITELIST
-  );
-  const harvestTeamTimeReport = await getHarvestTeamTimeReport(
-    process.env.SLEEQ_DIGITAL_HARVEST_ACCOUNT_ID,
-    process.env.HARVEST_TOKEN,
-    timeSheetDateToCheck,
-    timeSheetDateToCheck
-  );
-  const usersToNotify = [];
-  harvestUsers.forEach((user) => {
-    const timeReport = harvestTeamTimeReport.find((t) => t.user_id === user.id);
-    if (!timeReport || timeReport.total_hours < process.env.MISSING_HOURS_THRESHOLD) {
-      usersToNotify.push(user);
-    }
-  });
-  return usersToNotify;
-}
 async function slackNotify(usersToNotify, timeSheetDateToCheck) {
   console.log('slackNotify');
   if (usersToNotify && usersToNotify.length) {
@@ -185,10 +163,7 @@ async function app() {
     } else {
       timeSheetDateToCheck = moment().subtract(3, 'days').format('YYYY-MM-DD');
     }
-    const usersToNotify = [
-      ...(await dteligence(timeSheetDateToCheck)),
-      ...(await sleeqDigital(timeSheetDateToCheck)),
-    ];
+    const usersToNotify = [...(await dteligence(timeSheetDateToCheck))];
     await slackNotify(usersToNotify, timeSheetDateToCheck);
     process.exit();
   }

@@ -82,33 +82,6 @@ async function dteligence(timeSheetDateToCheckFrom, timeSheetDateToCheckTo) {
   });
   return usersToNotify;
 }
-async function sleeqDigital(timeSheetDateToCheckFrom, timeSheetDateToCheckTo) {
-  console.log('sleeqDigital');
-  const harvestUsers = await getHarvestUsers(
-    process.env.SLEEQ_DIGITAL_HARVEST_ACCOUNT_ID,
-    process.env.HARVEST_TOKEN,
-    process.env.SLEEQ_DIGITAL_EMAILS_WHITELIST
-  );
-  const harvestTeamTimeReport = await getHarvestTeamTimeReport(
-    process.env.SLEEQ_DIGITAL_HARVEST_ACCOUNT_ID,
-    process.env.HARVEST_TOKEN,
-    timeSheetDateToCheckFrom,
-    timeSheetDateToCheckTo
-  );
-  const usersToNotify = [];
-  harvestUsers.forEach((user) => {
-    const timeReport = harvestTeamTimeReport.find((t) => t.user_id === user.id);
-    if (
-      !timeReport ||
-      timeReport.total_hours <
-        process.env.MISSING_HOURS_THRESHOLD *
-          workday_count(timeSheetDateToCheckFrom, timeSheetDateToCheckTo)
-    ) {
-      usersToNotify.push(user);
-    }
-  });
-  return usersToNotify;
-}
 async function slackNotify(usersToNotify, timeSheetDateToCheckFrom, timeSheetDateToCheckTo) {
   console.log('slackNotify');
   if (usersToNotify && usersToNotify.length) {
@@ -200,10 +173,7 @@ async function app() {
   if (moment().format('YYYY-MM-DD') === moment().endOf('month').format('YYYY-MM-DD')) {
     let timeSheetDateToCheckFrom = moment().startOf('month').format('YYYY-MM-DD');
     let timeSheetDateToCheckTo = moment().format('YYYY-MM-DD');
-    const usersToNotify = [
-      ...(await dteligence(timeSheetDateToCheckFrom, timeSheetDateToCheckTo)),
-      ...(await sleeqDigital(timeSheetDateToCheckFrom, timeSheetDateToCheckTo)),
-    ];
+    const usersToNotify = [...(await dteligence(timeSheetDateToCheckFrom, timeSheetDateToCheckTo))];
     await slackNotify(usersToNotify, timeSheetDateToCheckFrom, timeSheetDateToCheckTo);
     process.exit();
   }
