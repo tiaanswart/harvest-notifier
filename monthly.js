@@ -1,3 +1,4 @@
+require('dotenv').config();
 const fetch = require('node-fetch');
 const moment = require('moment');
 async function getHarvestUsers(accountId, token, excludedUsers) {
@@ -70,15 +71,21 @@ async function dteligence(timeSheetDateToCheckFrom, timeSheetDateToCheckTo) {
   );
   const usersToNotify = [];
   harvestUsers.forEach((user) => {
-    const timeReport = harvestTeamTimeReport.find((t) => t.user_id === user.id);
+    // Filter reports by user_id
+    const timeReports = harvestTeamTimeReport.filter((t) => t.user_id === user.id);
+    // Sum up the total_hours from each filtered report
+    const totalHours = timeReports.reduce((sum, report) => sum + report.total_hours, 0);
     if (
-      !timeReport ||
-      timeReport.total_hours <
-        process.env.MISSING_HOURS_THRESHOLD *
-          workday_count(timeSheetDateToCheckFrom, timeSheetDateToCheckTo)
+      totalHours <
+      process.env.MISSING_HOURS_THRESHOLD *
+        workday_count(timeSheetDateToCheckFrom, timeSheetDateToCheckTo)
     ) {
-      usersToNotify.push(user);
+      usersToNotify.push({
+        ...user,
+        totalHours,
+      });
     }
+    console.log('usersToNotify', usersToNotify);
   });
   return usersToNotify;
 }
@@ -96,7 +103,9 @@ async function slackNotify(usersToNotify, timeSheetDateToCheckFrom, timeSheetDat
           ].includes(fullName.toLowerCase()) ||
           (slackUser.profile.email || '').toLowerCase() === user.email.toLowerCase()
       );
-      user.slackUser = slackUser ? `<@${slackUser.id}>` : fullName;
+      user.slackUser = slackUser
+        ? `<@${slackUser.id}> (Hours logged: ${user.totalHours})`
+        : `${fullName} (Hours logged: ${user.totalHours})`;
     });
     console.log(
       'usersToNotify',
