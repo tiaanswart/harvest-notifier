@@ -9,8 +9,8 @@
  * @license MIT
  */
 
-const moment = require('moment');
-const Logger = require('../utils/logger');
+import moment from 'moment';
+import Logger from '../utils/logger.js';
 
 /**
  * Creates a daily timesheet reminder message
@@ -30,6 +30,9 @@ function createDailyReminderMessage(usersToNotify, timeSheetDateToCheck) {
     formattedDate: moment(timeSheetDateToCheck).format('MMMM Do YYYY'),
     usersCount: usersToNotify?.length || 0
   });
+  
+  // Handle case where usersToNotify is null or undefined
+  const usersList = usersToNotify && Array.isArray(usersToNotify) ? usersToNotify : [];
   
   const messageBlocks = [
     {
@@ -52,7 +55,7 @@ function createDailyReminderMessage(usersToNotify, timeSheetDateToCheck) {
       type: 'section',
       text: {
         type: 'mrkdwn',
-        text: `• ${usersToNotify.map((user) => user.slackUser).join('\n• ')}`,
+        text: `• ${usersList.map((user) => user.slackUser).join('\n• ')}`,
       },
     },
     {
@@ -116,6 +119,9 @@ function createWeeklyReminderMessage(usersToNotify, timeSheetDateToCheckFrom, ti
     usersCount: usersToNotify?.length || 0
   });
   
+  // Handle case where usersToNotify is null or undefined
+  const usersList = usersToNotify && Array.isArray(usersToNotify) ? usersToNotify : [];
+  
   const messageBlocks = [
     {
       type: 'section',
@@ -137,7 +143,7 @@ function createWeeklyReminderMessage(usersToNotify, timeSheetDateToCheckFrom, ti
       type: 'section',
       text: {
         type: 'mrkdwn',
-        text: `• ${usersToNotify.map((user) => user.slackUser).join('\n• ')}`,
+        text: `• ${usersList.map((user) => user.slackUser).join('\n• ')}`,
       },
     },
     {
@@ -201,6 +207,9 @@ function createMonthlyReminderMessage(usersToNotify, timeSheetDateToCheckFrom, t
     usersCount: usersToNotify?.length || 0
   });
   
+  // Handle case where usersToNotify is null or undefined
+  const usersList = usersToNotify && Array.isArray(usersToNotify) ? usersToNotify : [];
+  
   const messageBlocks = [
     {
       type: 'section',
@@ -222,7 +231,7 @@ function createMonthlyReminderMessage(usersToNotify, timeSheetDateToCheckFrom, t
       type: 'section',
       text: {
         type: 'mrkdwn',
-        text: `• ${usersToNotify.map((user) => user.slackUser).join('\n• ')}`,
+        text: `• ${usersList.map((user) => user.slackUser).join('\n• ')}`,
       },
     },
     {
@@ -263,7 +272,7 @@ function createMonthlyReminderMessage(usersToNotify, timeSheetDateToCheckFrom, t
   return messageBlocks;
 }
 
-module.exports = {
+export {
   createDailyReminderMessage,
   createWeeklyReminderMessage,
   createMonthlyReminderMessage,

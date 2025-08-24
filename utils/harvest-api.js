@@ -9,8 +9,8 @@
  * @license MIT
  */
 
-const fetch = require('node-fetch');
-const Logger = require('./logger');
+import fetch from 'node-fetch';
+import Logger from './logger.js';
 
 /**
  * Retrieves active users from Harvest API
@@ -40,6 +40,16 @@ async function getHarvestUsers(accountId, token, excludedUsers) {
   
   const data = await response.json();
   Logger.apiResponse('Harvest', response.status, { usersCount: data.users?.length || 0 });
+  
+  // Handle case where data.users is undefined or null
+  if (!data.users || !Array.isArray(data.users)) {
+    Logger.functionExit('getHarvestUsers', { 
+      totalUsers: 0, 
+      activeUsers: 0,
+      excludedUsers: excludedUsers ? excludedUsers.split(',').length : 0
+    });
+    return [];
+  }
   
   const filteredUsers = data.users.filter(
     (user) => user.is_active && (!excludedUsers || !excludedUsers.split(',').includes(user.email))
@@ -90,10 +100,11 @@ async function getHarvestTeamTimeReport(accountId, token, dateFrom, dateTo) {
     resultsCount: data.results?.length || 0 
   });
   
-  return data.results;
+  // Handle case where data.results is undefined or null
+  return data.results || [];
 }
 
-module.exports = {
+export {
   getHarvestUsers,
   getHarvestTeamTimeReport,
 };

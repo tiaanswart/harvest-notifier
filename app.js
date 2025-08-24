@@ -11,5 +11,6 @@
  * @license MIT
  */
 
-require('dotenv').config();
+import dotenv from 'dotenv';
+dotenv.config();
 process.exit();

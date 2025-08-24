@@ -9,7 +9,8 @@
  * @license MIT
  */
 
-require('dotenv').config();
+import dotenv from 'dotenv';
+dotenv.config();
 
 // Log levels in order of priority
 const LOG_LEVELS = {
@@ -185,4 +186,4 @@ class Logger {
   }
 }
 
-module.exports = Logger;
+export default Logger;

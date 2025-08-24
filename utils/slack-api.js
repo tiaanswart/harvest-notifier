@@ -9,8 +9,8 @@
  * @license MIT
  */
 
-const fetch = require('node-fetch');
-const Logger = require('./logger');
+import fetch from 'node-fetch';
+import Logger from './logger.js';
 
 /**
  * Retrieves users from Slack workspace
@@ -38,6 +38,15 @@ async function getSlackUsers(token) {
     membersCount: data.members?.length || 0,
     ok: data.ok 
   });
+  
+  // Handle case where data.members is undefined or null
+  if (!data.members || !Array.isArray(data.members)) {
+    Logger.functionExit('getSlackUsers', { 
+      totalMembers: 0, 
+      activeMembers: 0 
+    });
+    return [];
+  }
   
   const filteredUsers = data.members.filter((user) => !user.deleted && !user.is_bot);
   
@@ -103,6 +112,16 @@ function matchUsersWithSlack(usersToNotify, slackUsers) {
     slackUsersCount: slackUsers.length 
   });
   
+  // Handle case where usersToNotify is null or undefined
+  if (!usersToNotify || !Array.isArray(usersToNotify)) {
+    Logger.functionExit('matchUsersWithSlack', { 
+      totalUsers: 0,
+      matchedCount: 0,
+      unmatchedCount: 0
+    });
+    return [];
+  }
+  
   const matchedUsers = usersToNotify.map((user) => {
     const fullName = `${user.first_name} ${user.last_name}`;
     const slackUser = slackUsers.find(
@@ -132,7 +151,7 @@ function matchUsersWithSlack(usersToNotify, slackUsers) {
   return matchedUsers;
 }
 
-module.exports = {
+export {
   getSlackUsers,
   sendSlackMessage,
   matchUsersWithSlack,

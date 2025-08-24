@@ -3,8 +3,11 @@
   "version": "1.0.0",
   "description": "An integration between Harvest and Slack that automatically reminds users who forget to mark their working hours in Harvest",
   "main": "app.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "start": "node app.js",
     "daily": "node daily.js",
     "weekly": "node weekly.js",
@@ -24,13 +27,14 @@
   "author": "tiaan.swart@sleeq.global",
   "license": "MIT",
   "dependencies": {
-    "dotenv": "^16.4.5",
-    "moment": "^2.29.4",
-    "node-fetch": "^2.6.6"
+    "dotenv": "^17.2.1",
+    "moment": "^2.30.1",
+    "node-fetch": "^3.3.2"
   },
   "devDependencies": {
-    "jsdoc": "^4.0.2",
-    "ink-docstrap": "^1.3.2"
+    "ink-docstrap": "^1.3.2",
+    "jsdoc": "^4.0.4",
+    "vitest": "^3.2.4"
   },
   "engines": {
     "node": ">=14.0.0"
