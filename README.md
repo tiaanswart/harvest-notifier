@@ -4,9 +4,11 @@ An integration between Harvest and Slack that automatically reminds users who fo
 
 ## Features
 
-- **Daily Notifications**: Checks previous working day and sends Slack reminders
-- **Weekly Notifications**: Weekly summary of missing timesheet entries
-- **Monthly Notifications**: Monthly summary of missing timesheet entries
+- **Unified Application**: Single application that handles daily, weekly, and monthly notifications
+- **Smart Scheduling**: Automatically determines which notifications to run based on the current date
+- **Daily Notifications**: Checks previous working day and sends Slack reminders (runs on weekdays)
+- **Weekly Notifications**: Weekly summary of missing timesheet entries (runs on Fridays)
+- **Monthly Notifications**: Monthly summary of missing timesheet entries (runs on last day of month)
 - **Smart Date Logic**: Handles weekends and holidays appropriately
 - **User Matching**: Automatically matches Harvest users with Slack users
 - **Configurable Thresholds**: Set minimum hours threshold per day
@@ -60,24 +62,35 @@ LOG_LEVEL=INFO
 
 ## Usage
 
-### Running Notifications
+### Running the Application
 
-**Daily Notifications:**
+The application is designed to be run once daily via a cron job or scheduler. It automatically determines which notifications to run based on the current date:
 
 ```bash
-npm run daily
+node app.js
 ```
 
-**Weekly Notifications:**
+### Notification Schedule
+
+The application automatically determines which notifications to run:
+
+- **Daily**: Runs on weekdays (Monday-Friday), checks the previous working day
+- **Weekly**: Runs on Fridays, checks the entire week (Monday-Friday)
+- **Monthly**: Runs on the last day of the month, checks the entire month
+
+### Example Scenarios
+
+- **Monday**: Runs daily notification (checks Friday)
+- **Friday**: Runs daily notification (checks Thursday) + weekly notification (checks Monday-Friday)
+- **Last day of month**: Runs daily + weekly + monthly notifications
+- **Weekend**: No notifications run
+
+### Testing Different Scenarios
+
+You can test how the application handles different dates:
 
 ```bash
-npm run weekly
-```
-
-**Monthly Notifications:**
-
-```bash
-npm run monthly
+node test-scenarios.js
 ```
 
 ### Development
@@ -222,13 +235,19 @@ Documentation will be available at `http://localhost:8080`
 
 The application is structured with the following modules:
 
-- **`daily.js`**: Daily timesheet notification logic
-- **`weekly.js`**: Weekly timesheet notification logic
-- **`monthly.js`**: Monthly timesheet notification logic
+- **`app.js`**: Main unified application that handles all notification types
 - **`utils/harvest-api.js`**: Harvest API integration
 - **`utils/slack-api.js`**: Slack API integration
 - **`utils/logger.js`**: Structured logging utility
 - **`templates/slack-templates.js`**: Slack message templates
+
+### Legacy Files (Deprecated)
+
+The following files are kept for reference but are no longer used:
+
+- **`daily.js`**: Legacy daily notification module
+- **`weekly.js`**: Legacy weekly notification module  
+- **`monthly.js`**: Legacy monthly notification module
 
 ## Contributing
 

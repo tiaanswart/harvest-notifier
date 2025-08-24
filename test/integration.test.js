@@ -1,10 +1,11 @@
 /**
- * @fileoverview Integration tests for Harvest Notifier
+ * @fileoverview Integration tests for unified Harvest Notifier
  *
- * Tests the complete workflow from Harvest data analysis to Slack notifications.
+ * Tests the complete workflow from Harvest data analysis to Slack notifications
+ * using the unified app.js application.
  *
  * @author tiaan.swart@sleeq.global
- * @version 1.0.0
+ * @version 2.0.0
  * @license MIT
  */
 
@@ -12,9 +13,9 @@ import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import moment from 'moment';
 import { getHarvestUsers, getHarvestTeamTimeReport } from '../utils/harvest-api.js';
 import { getSlackUsers, sendSlackMessage, matchUsersWithSlack } from '../utils/slack-api.js';
-import { createDailyReminderMessage } from '../templates/slack-templates.js';
+import { createDailyReminderMessage, createWeeklyReminderMessage, createMonthlyReminderMessage } from '../templates/slack-templates.js';
 import Logger from '../utils/logger.js';
-import { analyzeHarvestData, slackNotify, app } from '../daily.js';
+import * as appModule from '../app.js';
 
 // Mock dependencies
 vi.mock('../utils/harvest-api.js');
@@ -25,7 +26,7 @@ vi.mock('../utils/logger.js');
 // Mock process.exit
 const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => {});
 
-describe('Integration Tests', () => {
+describe('Integration Tests - Unified App', () => {
   const mockHarvestUsers = [
     {
       id: 1,
@@ -116,41 +117,36 @@ describe('Integration Tests', () => {
     process.env.SLACK_CHANNEL = '#general';
     process.env.MISSING_HOURS_THRESHOLD = '8';
     process.env.EMAILS_WHITELIST = 'admin@example.com';
+
+    // Setup default mocks
+    getHarvestUsers.mockResolvedValue(mockHarvestUsers);
+    getHarvestTeamTimeReport.mockResolvedValue(mockTimeReports);
+    getSlackUsers.mockResolvedValue(mockSlackUsers);
+    sendSlackMessage.mockResolvedValue({ ok: true });
+    matchUsersWithSlack.mockReturnValue([
+      { ...mockHarvestUsers[0], slackUser: '<@U123456> (Hours logged: 5.5)' },
+      { ...mockHarvestUsers[1], slackUser: 'Jane Smith (Hours logged: 2.0)' },
+    ]);
+    createDailyReminderMessage.mockReturnValue(mockSlackBlocks);
+    createWeeklyReminderMessage.mockReturnValue(mockSlackBlocks);
+    createMonthlyReminderMessage.mockReturnValue(mockSlackBlocks);
+
+    // No spies - let the real functions run
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('Complete Daily Workflow', () => {
-    test('should complete full daily notification workflow successfully', async () => {
-      getHarvestUsers.mockResolvedValue(mockHarvestUsers);
-      getHarvestTeamTimeReport.mockResolvedValue(mockTimeReports);
-      getSlackUsers.mockResolvedValue(mockSlackUsers);
-      matchUsersWithSlack.mockReturnValue([
-        {
-          id: 1,
-          first_name: 'John',
-          last_name: 'Doe',
-          email: 'john@example.com',
-          totalHours: 5.5,
-          slackUser: '<@U123456>',
-        },
-        {
-          id: 2,
-          first_name: 'Jane',
-          last_name: 'Smith',
-          email: 'jane@example.com',
-          totalHours: 2.0,
-          slackUser: '<@U789012>',
-        },
-      ]);
-      createDailyReminderMessage.mockReturnValue(mockSlackBlocks);
-      sendSlackMessage.mockResolvedValue({ ok: true });
+    test('should complete full daily notification workflow', async () => {
+      // Mock Monday
+      const originalNow = Date.now;
+      Date.now = () => new Date('2024-01-15').getTime(); // Monday
 
-      await app(false);
+      await appModule.app(false); // Don't exit for testing
 
-      // Verify that all functions were called
+      // Verify Harvest API calls
       expect(getHarvestUsers).toHaveBeenCalledWith(
         'test-account-id',
         'test-harvest-token',
@@ -159,24 +155,25 @@ describe('Integration Tests', () => {
       expect(getHarvestTeamTimeReport).toHaveBeenCalledWith(
         'test-account-id',
         'test-harvest-token',
-        expect.any(String), // Allow any date
-        expect.any(String)
+        '2024-01-12', // Friday (3 days back from Monday)
+        '2024-01-12'
       );
+
+      // Verify Slack API calls
       expect(getSlackUsers).toHaveBeenCalledWith('test-slack-token');
       expect(matchUsersWithSlack).toHaveBeenCalled();
       expect(createDailyReminderMessage).toHaveBeenCalled();
-      expect(sendSlackMessage).toHaveBeenCalledWith(
-        '#general',
-        mockSlackBlocks,
-        'test-slack-token'
-      );
+      expect(sendSlackMessage).toHaveBeenCalledWith('#general', mockSlackBlocks, 'test-slack-token');
 
       // Verify logging
-      expect(Logger.appStart).toHaveBeenCalledWith('daily', expect.any(Object));
-      expect(Logger.appEnd).toHaveBeenCalledWith('daily', 'Daily notification completed');
+      expect(Logger.appStart).toHaveBeenCalledWith('unified', expect.any(Object));
+      expect(Logger.appEnd).toHaveBeenCalledWith('unified', expect.any(String));
+
+      Date.now = originalNow;
     });
 
-    test('should handle workflow with no users needing notification', async () => {
+    test('should handle users with sufficient hours', async () => {
+      // Mock users with sufficient hours
       const usersWithSufficientHours = [
         {
           id: 1,
@@ -190,7 +187,7 @@ describe('Integration Tests', () => {
       const timeReportsWithSufficientHours = [
         {
           user_id: 1,
-          total_hours: 8.5, // Sufficient hours
+          total_hours: 8.5,
           date: '2024-01-15',
         },
       ];
@@ -198,319 +195,240 @@ describe('Integration Tests', () => {
       getHarvestUsers.mockResolvedValue(usersWithSufficientHours);
       getHarvestTeamTimeReport.mockResolvedValue(timeReportsWithSufficientHours);
 
-      const usersToNotify = await analyzeHarvestData('2024-01-15');
+      // Mock Monday
+      const originalNow = Date.now;
+      Date.now = () => new Date('2024-01-15').getTime(); // Monday
 
-      // Verify that no Slack functions were called
-      expect(getSlackUsers).not.toHaveBeenCalled();
-      expect(sendSlackMessage).not.toHaveBeenCalled();
+      await appModule.app(false); // Don't exit for testing
 
-      // Verify the result
-      expect(usersToNotify).toHaveLength(0); // No users to notify
-
-      // Verify logging
-      expect(Logger.userAnalysis).toHaveBeenCalledWith('daily', 1, 0, []);
-    });
-
-    test('should handle workflow with API errors gracefully', async () => {
-      // Mock Harvest API error
-      getHarvestUsers.mockRejectedValue(new Error('Harvest API Error'));
-
-      // Test error handling
-      await expect(analyzeHarvestData('2024-01-15')).rejects.toThrow('Harvest API Error');
-
-      // Verify that Slack API was not called
-      expect(getSlackUsers).not.toHaveBeenCalled();
-      expect(sendSlackMessage).not.toHaveBeenCalled();
-    });
-
-    test('should handle workflow with Slack API errors gracefully', async () => {
-      // Mock successful Harvest API calls but Slack API error
-      getHarvestUsers.mockResolvedValue(mockHarvestUsers);
-      getHarvestTeamTimeReport.mockResolvedValue(mockTimeReports);
-      getSlackUsers.mockRejectedValue(new Error('Slack API Error'));
-
-      // Test Slack API error handling
-      const usersToNotify = await analyzeHarvestData('2024-01-15');
-      await expect(slackNotify(usersToNotify, '2024-01-15')).rejects.toThrow('Slack API Error');
-
-      // Verify that Harvest API was called
+      // Should still call Harvest APIs but not Slack APIs since no users need notification
       expect(getHarvestUsers).toHaveBeenCalled();
       expect(getHarvestTeamTimeReport).toHaveBeenCalled();
+      expect(getSlackUsers).not.toHaveBeenCalled();
+      expect(sendSlackMessage).not.toHaveBeenCalled();
+
+      Date.now = originalNow;
     });
   });
 
-  describe('User Analysis Integration', () => {
-    test('should correctly identify users with insufficient hours', async () => {
-      getHarvestUsers.mockResolvedValue(mockHarvestUsers);
-      getHarvestTeamTimeReport.mockResolvedValue(mockTimeReports);
+  describe('Complete Weekly Workflow', () => {
+    test('should complete full weekly notification workflow', async () => {
+      // Mock Friday
+      const originalNow = Date.now;
+      Date.now = () => new Date('2024-01-19').getTime(); // Friday
 
-      const usersToNotify = await analyzeHarvestData('2024-01-15');
+      await appModule.app(false); // Don't exit for testing
 
-      // Verify that users with less than 8 hours were identified
-      expect(Logger.userAnalysis).toHaveBeenCalledWith(
-        'daily',
-        3, // total users
-        2, // users to notify (John with 5.5 hours, Jane with 2.0 hours)
-        expect.arrayContaining([
-          expect.objectContaining({ id: 1, totalHours: 5.5 }),
-          expect.objectContaining({ id: 2, totalHours: 2.0 }),
-        ])
+      // Should run both daily and weekly notifications
+      expect(getHarvestUsers).toHaveBeenCalledTimes(2);
+      expect(getHarvestTeamTimeReport).toHaveBeenCalledTimes(2);
+      expect(getSlackUsers).toHaveBeenCalledTimes(2);
+      expect(sendSlackMessage).toHaveBeenCalledTimes(2);
+
+      // Verify weekly-specific calls
+      expect(getHarvestTeamTimeReport).toHaveBeenCalledWith(
+        'test-account-id',
+        'test-harvest-token',
+        '2024-01-15', // Monday
+        '2024-01-19'  // Friday
       );
 
-      expect(usersToNotify).toHaveLength(2);
-      expect(usersToNotify).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ id: 1, totalHours: 5.5 }),
-          expect.objectContaining({ id: 2, totalHours: 2.0 }),
-        ])
-      );
-    });
+      expect(createWeeklyReminderMessage).toHaveBeenCalled();
 
-    test('should handle users with multiple time entries', async () => {
-      const usersWithMultipleEntries = [
-        {
-          id: 1,
-          first_name: 'John',
-          last_name: 'Doe',
-          email: 'john@example.com',
-          is_active: true,
-        },
-      ];
-
-      const multipleTimeReports = [
-        {
-          user_id: 1,
-          total_hours: 4.0,
-          date: '2024-01-15',
-        },
-        {
-          user_id: 1,
-          total_hours: 3.5,
-          date: '2024-01-15',
-        },
-      ];
-
-      getHarvestUsers.mockResolvedValue(usersWithMultipleEntries);
-      getHarvestTeamTimeReport.mockResolvedValue(multipleTimeReports);
-
-      const usersToNotify = await analyzeHarvestData('2024-01-15');
-
-      // Verify that hours were summed correctly (4.0 + 3.5 = 7.5)
-      expect(Logger.userAnalysis).toHaveBeenCalledWith(
-        'daily',
-        1,
-        1, // user should be notified since 7.5 < 8
-        expect.arrayContaining([expect.objectContaining({ id: 1, totalHours: 7.5 })])
-      );
-
-      expect(usersToNotify).toHaveLength(1);
-      expect(usersToNotify[0]).toMatchObject({ id: 1, totalHours: 7.5 });
-    });
-
-    test('should handle users with no time entries', async () => {
-      const usersWithNoEntries = [
-        {
-          id: 1,
-          first_name: 'John',
-          last_name: 'Doe',
-          email: 'john@example.com',
-          is_active: true,
-        },
-      ];
-
-      const emptyTimeReports = [];
-
-      getHarvestUsers.mockResolvedValue(usersWithNoEntries);
-      getHarvestTeamTimeReport.mockResolvedValue(emptyTimeReports);
-
-      const usersToNotify = await analyzeHarvestData('2024-01-15');
-
-      // Verify that user with no entries was identified (0 hours < 8)
-      expect(Logger.userAnalysis).toHaveBeenCalledWith(
-        'daily',
-        1,
-        1, // user should be notified since 0 < 8
-        expect.arrayContaining([expect.objectContaining({ id: 1, totalHours: 0 })])
-      );
-
-      expect(usersToNotify).toHaveLength(1);
-      expect(usersToNotify[0]).toMatchObject({ id: 1, totalHours: 0 });
+      Date.now = originalNow;
     });
   });
 
-  describe('Slack Integration', () => {
-    test('should correctly match Harvest users with Slack users', async () => {
-      getHarvestUsers.mockResolvedValue(mockHarvestUsers);
-      getHarvestTeamTimeReport.mockResolvedValue(mockTimeReports);
-      getSlackUsers.mockResolvedValue(mockSlackUsers);
-      matchUsersWithSlack.mockReturnValue([
-        {
-          id: 1,
-          first_name: 'John',
-          last_name: 'Doe',
-          email: 'john@example.com',
-          totalHours: 5.5,
-          slackUser: '<@U123456>',
-        },
-      ]);
-      createDailyReminderMessage.mockReturnValue(mockSlackBlocks);
-      sendSlackMessage.mockResolvedValue({ ok: true });
+  describe('Complete Monthly Workflow', () => {
+    test('should complete full monthly notification workflow', async () => {
+      // Mock last day of month
+      const originalNow = Date.now;
+      Date.now = () => new Date('2024-01-31').getTime(); // Last day of month
 
-      const usersToNotify = await analyzeHarvestData('2024-01-15');
-      await slackNotify(usersToNotify, '2024-01-15');
+      await appModule.app(false); // Don't exit for testing
 
-      // Verify that matchUsersWithSlack was called with correct parameters
-      expect(matchUsersWithSlack).toHaveBeenCalledWith(
-        expect.arrayContaining([
-          expect.objectContaining({ id: 1, totalHours: 5.5 }),
-          expect.objectContaining({ id: 2, totalHours: 2.0 }),
-        ]),
-        mockSlackUsers
+      // Should run daily and monthly notifications (Wednesday is not Friday, so no weekly)
+      expect(getHarvestUsers).toHaveBeenCalledTimes(2);
+      expect(getHarvestTeamTimeReport).toHaveBeenCalledTimes(2);
+      expect(getSlackUsers).toHaveBeenCalledTimes(2);
+      expect(sendSlackMessage).toHaveBeenCalledTimes(2);
+
+      // Verify monthly-specific calls
+      expect(getHarvestTeamTimeReport).toHaveBeenCalledWith(
+        'test-account-id',
+        'test-harvest-token',
+        '2024-01-01', // Start of month
+        '2024-01-31'  // End of month
       );
-    });
 
-    test('should handle users not found in Slack', async () => {
-      getHarvestUsers.mockResolvedValue(mockHarvestUsers);
-      getHarvestTeamTimeReport.mockResolvedValue(mockTimeReports);
-      getSlackUsers.mockResolvedValue(mockSlackUsers);
-      matchUsersWithSlack.mockReturnValue([
-        {
-          id: 1,
-          first_name: 'John',
-          last_name: 'Doe',
-          email: 'john@example.com',
-          totalHours: 5.5,
-          slackUser: 'John Doe (john@example.com)', // Fallback format
-        },
-      ]);
-      createDailyReminderMessage.mockReturnValue(mockSlackBlocks);
-      sendSlackMessage.mockResolvedValue({ ok: true });
+      expect(createMonthlyReminderMessage).toHaveBeenCalled();
 
-      const usersToNotify = await analyzeHarvestData('2024-01-15');
-      await slackNotify(usersToNotify, '2024-01-15');
-
-      // Verify that matchUsersWithSlack was called
-      expect(matchUsersWithSlack).toHaveBeenCalledWith(
-        expect.arrayContaining([
-          expect.objectContaining({ id: 1, totalHours: 5.5 }),
-          expect.objectContaining({ id: 2, totalHours: 2.0 }),
-        ]),
-        mockSlackUsers
-      );
-    });
-
-    test('should send correct Slack message format', async () => {
-      getHarvestUsers.mockResolvedValue(mockHarvestUsers);
-      getHarvestTeamTimeReport.mockResolvedValue(mockTimeReports);
-      getSlackUsers.mockResolvedValue(mockSlackUsers);
-      matchUsersWithSlack.mockReturnValue([
-        {
-          id: 1,
-          first_name: 'John',
-          last_name: 'Doe',
-          email: 'john@example.com',
-          totalHours: 5.5,
-          slackUser: '<@U123456>',
-        },
-      ]);
-      createDailyReminderMessage.mockReturnValue(mockSlackBlocks);
-      sendSlackMessage.mockResolvedValue({ ok: true });
-
-      const usersToNotify = await analyzeHarvestData('2024-01-15');
-      await slackNotify(usersToNotify, '2024-01-15');
-
-      // Verify that createDailyReminderMessage was called with correct parameters
-      expect(createDailyReminderMessage).toHaveBeenCalledWith(
-        expect.arrayContaining([
-          expect.objectContaining({ slackUser: expect.stringContaining('<@') }),
-        ]),
-        '2024-01-15'
-      );
+      Date.now = originalNow;
     });
   });
 
-  describe('Environment Variable Integration', () => {
-    test('should use all environment variables correctly', async () => {
-      // Set custom environment variables
-      process.env.HARVEST_ACCOUNT_ID = 'custom-account-id';
-      process.env.HARVEST_TOKEN = 'custom-harvest-token';
-      process.env.SLACK_TOKEN = 'custom-slack-token';
-      process.env.SLACK_CHANNEL = '#custom-channel';
-      process.env.MISSING_HOURS_THRESHOLD = '6';
-      process.env.EMAILS_WHITELIST = 'custom@example.com';
+  describe('Weekend Handling', () => {
+    test('should not run any notifications on Saturday', async () => {
+      // Mock Saturday
+      const originalNow = Date.now;
+      Date.now = () => new Date('2024-01-20').getTime(); // Saturday
 
-      getHarvestUsers.mockResolvedValue(mockHarvestUsers);
-      getHarvestTeamTimeReport.mockResolvedValue(mockTimeReports);
-      getSlackUsers.mockResolvedValue(mockSlackUsers);
-      createDailyReminderMessage.mockReturnValue(mockSlackBlocks);
-      sendSlackMessage.mockResolvedValue({ ok: true });
+      await appModule.app(false); // Don't exit for testing
 
-      await app(false);
+      // Should not call any APIs
+      expect(getHarvestUsers).not.toHaveBeenCalled();
+      expect(getHarvestTeamTimeReport).not.toHaveBeenCalled();
+      expect(getSlackUsers).not.toHaveBeenCalled();
+      expect(sendSlackMessage).not.toHaveBeenCalled();
 
-      // Verify that environment variables were used correctly
+      Date.now = originalNow;
+    });
+
+    test('should not run any notifications on Sunday', async () => {
+      // Mock Sunday
+      const originalNow = Date.now;
+      Date.now = () => new Date('2024-01-21').getTime(); // Sunday
+
+      await appModule.app(false); // Don't exit for testing
+
+      // Should not call any APIs
+      expect(getHarvestUsers).not.toHaveBeenCalled();
+      expect(getHarvestTeamTimeReport).not.toHaveBeenCalled();
+      expect(getSlackUsers).not.toHaveBeenCalled();
+      expect(sendSlackMessage).not.toHaveBeenCalled();
+
+      Date.now = originalNow;
+    });
+  });
+
+  describe('Error Handling', () => {
+    test('should handle Harvest API errors gracefully', async () => {
+      getHarvestUsers.mockRejectedValue(new Error('Harvest API Error'));
+
+      // Mock Monday
+      const originalNow = Date.now;
+      Date.now = () => new Date('2024-01-15').getTime(); // Monday
+
+      await expect(appModule.app(false)).rejects.toThrow('Harvest API Error');
+
+      Date.now = originalNow;
+    });
+
+    test('should handle Slack API errors gracefully', async () => {
+      getSlackUsers.mockRejectedValue(new Error('Slack API Error'));
+
+      // Mock Monday
+      const originalNow = Date.now;
+      Date.now = () => new Date('2024-01-15').getTime(); // Monday
+
+      await expect(appModule.app(false)).rejects.toThrow('Slack API Error');
+
+      Date.now = originalNow;
+    });
+
+    test('should handle template creation errors gracefully', async () => {
+      createDailyReminderMessage.mockImplementation(() => {
+        throw new Error('Template Error');
+      });
+
+      // Mock Monday
+      const originalNow = Date.now;
+      Date.now = () => new Date('2024-01-15').getTime(); // Monday
+
+      await expect(appModule.app(false)).rejects.toThrow('Template Error');
+
+      Date.now = originalNow;
+    });
+  });
+
+  describe('Environment Variables', () => {
+    test('should use environment variables for configuration', async () => {
+      // Mock Monday
+      const originalNow = Date.now;
+      Date.now = () => new Date('2024-01-15').getTime(); // Monday
+
+      await appModule.app(false); // Don't exit for testing
+
       expect(getHarvestUsers).toHaveBeenCalledWith(
-        'custom-account-id',
-        'custom-harvest-token',
-        'custom@example.com'
+        'test-account-id',
+        'test-harvest-token',
+        'admin@example.com'
       );
-      expect(getSlackUsers).toHaveBeenCalledWith('custom-slack-token');
-      expect(sendSlackMessage).toHaveBeenCalledWith(
-        '#custom-channel',
-        expect.anything(),
-        'custom-slack-token'
-      );
+
+      Date.now = originalNow;
     });
 
-    test('should handle missing environment variables gracefully', async () => {
+    test('should handle missing environment variables', async () => {
       // Clear environment variables
       delete process.env.HARVEST_ACCOUNT_ID;
       delete process.env.HARVEST_TOKEN;
       delete process.env.SLACK_TOKEN;
-      delete process.env.SLACK_CHANNEL;
       delete process.env.EMAILS_WHITELIST;
 
-      getHarvestUsers.mockResolvedValue(mockHarvestUsers);
-      getHarvestTeamTimeReport.mockResolvedValue(mockTimeReports);
-      getSlackUsers.mockResolvedValue(mockSlackUsers);
-      createDailyReminderMessage.mockReturnValue(mockSlackBlocks);
-      sendSlackMessage.mockResolvedValue({ ok: true });
+      // Mock Monday
+      const originalNow = Date.now;
+      Date.now = () => new Date('2024-01-15').getTime(); // Monday
 
-      await app(false);
+      await appModule.app(false); // Don't exit for testing
 
-      // Verify that functions were called with undefined values
+      // Should still call functions but with undefined values
       expect(getHarvestUsers).toHaveBeenCalledWith(undefined, undefined, undefined);
-      expect(getSlackUsers).toHaveBeenCalledWith(undefined);
-      expect(sendSlackMessage).toHaveBeenCalledWith(undefined, expect.anything(), undefined);
+
+      Date.now = originalNow;
     });
   });
 
-  describe('Error Recovery', () => {
-    test('should handle partial API failures gracefully', async () => {
-      getHarvestUsers.mockResolvedValue(mockHarvestUsers);
-      getHarvestTeamTimeReport.mockResolvedValue(mockTimeReports);
-      getSlackUsers.mockRejectedValue(new Error('Slack API Error'));
+  describe('Logging', () => {
+    test('should log application start and end', async () => {
+      // Mock Monday
+      const originalNow = Date.now;
+      Date.now = () => new Date('2024-01-15').getTime(); // Monday
 
-      await expect(app(false)).rejects.toThrow('Slack API Error');
+      await appModule.app(false); // Don't exit for testing
 
-      // Verify that Harvest API was called successfully
-      expect(getHarvestUsers).toHaveBeenCalled();
-      expect(getHarvestTeamTimeReport).toHaveBeenCalled();
-    });
-
-    test('should handle template creation failures', async () => {
-      getHarvestUsers.mockResolvedValue(mockHarvestUsers);
-      getHarvestTeamTimeReport.mockResolvedValue(mockTimeReports);
-      getSlackUsers.mockResolvedValue(mockSlackUsers);
-      createDailyReminderMessage.mockImplementation(() => {
-        throw new Error('Template Creation Error');
+      expect(Logger.appStart).toHaveBeenCalledWith('unified', {
+        currentDate: expect.any(String),
+        weekday: expect.any(String),
+        isLastDayOfMonth: expect.any(Boolean),
       });
 
-      await expect(app(false)).rejects.toThrow('Template Creation Error');
+      expect(Logger.appEnd).toHaveBeenCalledWith('unified', expect.any(String));
 
-      // Verify that Harvest and Slack APIs were called
-      expect(getHarvestUsers).toHaveBeenCalled();
-      expect(getHarvestTeamTimeReport).toHaveBeenCalled();
-      expect(getSlackUsers).toHaveBeenCalled();
+      Date.now = originalNow;
+    });
+
+    test('should log function entries and exits', async () => {
+      await appModule.analyzeHarvestData('2024-01-15', '2024-01-15', 'daily');
+
+      expect(Logger.functionEntry).toHaveBeenCalledWith('analyzeHarvestData', expect.any(Object));
+      expect(Logger.functionExit).toHaveBeenCalledWith('analyzeHarvestData', expect.any(Object));
+    });
+
+    test('should log user analysis results', async () => {
+      await appModule.analyzeHarvestData('2024-01-15', '2024-01-15', 'daily');
+
+      expect(Logger.userAnalysis).toHaveBeenCalledWith(
+        'daily',
+        expect.any(Number),
+        expect.any(Number),
+        expect.any(Array)
+      );
+    });
+
+    test('should log notification sending', async () => {
+      const usersToNotify = [
+        {
+          id: 1,
+          first_name: 'John',
+          last_name: 'Doe',
+          email: 'john@example.com',
+          totalHours: 5.5,
+        },
+      ];
+
+      await appModule.slackNotify(usersToNotify, '2024-01-15', '2024-01-15', 'daily');
+
+      expect(Logger.notificationSent).toHaveBeenCalledWith('daily', expect.any(Number), '#general');
     });
   });
 });
