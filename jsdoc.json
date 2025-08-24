@@ -1,0 +1,51 @@
+{
+  "tags": {
+    "allowUnknownTags": true,
+    "dictionaries": [
+      "jsdoc",
+      "closure"
+    ]
+  },
+  "source": {
+    "include": [
+      "app.js",
+      "daily.js",
+      "weekly.js",
+      "monthly.js"
+    ],
+    "includePattern": "\\.js$",
+    "excludePattern": "(node_modules/|docs)"
+  },
+  "plugins": [
+    "plugins/markdown"
+  ],
+  "templates": {
+    "cleverLinks": false,
+    "monospaceLinks": false,
+    "default": {
+      "outputSourceFiles": true
+    },
+    "path": "node_modules/ink-docstrap/template",
+    "theme": "cerulean",
+    "navType": "vertical",
+    "linenums": true,
+    "dateFormat": "MMMM Do YYYY, h:mm:ss a"
+  },
+  "opts": {
+    "destination": "./docs",
+    "recurse": true,
+    "readme": "./README.md",
+    "template": "node_modules/ink-docstrap/template",
+    "theme_opts": {
+      "title": "Harvest Notifier Documentation",
+      "menu": {
+        "Github repo": {
+          "href": "https://github.com/tiaanswart/harvest-notifier",
+          "target": "_blank",
+          "class": "menu-item",
+          "id": "repository"
+        }
+      }
+    }
+  }
+}

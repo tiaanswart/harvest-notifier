@@ -1,6 +1,36 @@
+/**
+ * @fileoverview Daily Harvest timesheet notification system
+ * 
+ * This module handles daily timesheet notifications for the Harvest Notifier system.
+ * It checks for users who haven't logged sufficient hours for the previous working day
+ * and sends Slack notifications to remind them to complete their timesheets.
+ * 
+ * The system runs on weekdays and checks the previous working day:
+ * - Monday: checks Friday (3 days back)
+ * - Tuesday-Friday: checks the previous day
+ * - Weekends: no notifications sent
+ * 
+ * @author tiaan.swart@sleeq.global
+ * @version 1.0.0
+ * @license MIT
+ */
+
 require('dotenv').config();
 const fetch = require('node-fetch');
 const moment = require('moment');
+
+/**
+ * Retrieves active users from Harvest API
+ * 
+ * Fetches all users from the Harvest account and filters out inactive users
+ * and users in the exclusion list (whitelist).
+ * 
+ * @param {string} accountId - The Harvest account ID
+ * @param {string} token - The Harvest API token
+ * @param {string} excludedUsers - Comma-separated list of email addresses to exclude
+ * @returns {Promise<Array>} Array of active Harvest users
+ * @throws {Error} If the API request fails
+ */
 async function getHarvestUsers(accountId, token, excludedUsers) {
   console.log('getHarvestUsers');
   const response = await fetch('https://api.harvestapp.com/v2/users', {
@@ -17,6 +47,19 @@ async function getHarvestUsers(accountId, token, excludedUsers) {
     (user) => user.is_active && (!excludedUsers || !excludedUsers.split(',').includes(user.email))
   );
 }
+
+/**
+ * Retrieves team time reports from Harvest API for a specific date range
+ * 
+ * Fetches time entries for all users within the specified date range.
+ * 
+ * @param {string} accountId - The Harvest account ID
+ * @param {string} token - The Harvest API token
+ * @param {string} dateFrom - Start date in YYYY-MM-DD format
+ * @param {string} dateTo - End date in YYYY-MM-DD format
+ * @returns {Promise<Array>} Array of time report entries
+ * @throws {Error} If the API request fails
+ */
 async function getHarvestTeamTimeReport(accountId, token, dateFrom, dateTo) {
   console.log('getHarvestTeamTimeReport');
   const response = await fetch(
@@ -34,6 +77,16 @@ async function getHarvestTeamTimeReport(accountId, token, dateFrom, dateTo) {
   const data = await response.json();
   return data.results;
 }
+
+/**
+ * Retrieves users from Slack workspace
+ * 
+ * Fetches all users from the Slack workspace and filters out deleted users and bots.
+ * 
+ * @param {string} token - The Slack API token
+ * @returns {Promise<Array>} Array of active Slack users
+ * @throws {Error} If the API request fails
+ */
 async function getSlackUsers(token) {
   console.log('getSlackUsers');
   const response = await fetch('https://slack.com/api/users.list', {
@@ -46,25 +99,45 @@ async function getSlackUsers(token) {
   const data = await response.json();
   return data.members.filter((user) => !user.deleted && !user.is_bot);
 }
+
+/**
+ * Analyzes Harvest data for Dteligence team and identifies users with insufficient hours
+ * 
+ * Compares each user's logged hours against the threshold and returns a list
+ * of users who need to be notified about missing timesheet entries.
+ * 
+ * @param {string} timeSheetDateToCheck - Date to check in YYYY-MM-DD format
+ * @returns {Promise<Array>} Array of users who need notification
+ * @throws {Error} If API requests fail
+ */
 async function dteligence(timeSheetDateToCheck) {
   console.log('dteligence');
+  
+  // Get active users from Harvest
   const harvestUsers = await getHarvestUsers(
     process.env.DTELIGENCE_HARVEST_ACCOUNT_ID,
     process.env.HARVEST_TOKEN,
     process.env.DTELIGENCE_EMAILS_WHITELIST
   );
+  
+  // Get time reports for the specified date
   const harvestTeamTimeReport = await getHarvestTeamTimeReport(
     process.env.DTELIGENCE_HARVEST_ACCOUNT_ID,
     process.env.HARVEST_TOKEN,
     timeSheetDateToCheck,
     timeSheetDateToCheck
   );
+  
   const usersToNotify = [];
+  
+  // Check each user's hours against the threshold
   harvestUsers.forEach((user) => {
     // Filter reports by user_id
     const timeReports = harvestTeamTimeReport.filter((t) => t.user_id === user.id);
     // Sum up the total_hours from each filtered report
     const totalHours = timeReports.reduce((sum, report) => sum + report.total_hours, 0);
+    
+    // If hours are below threshold, add to notification list
     if (totalHours < process.env.MISSING_HOURS_THRESHOLD) {
       usersToNotify.push({
         ...user,
@@ -73,12 +146,30 @@ async function dteligence(timeSheetDateToCheck) {
     }
     console.log('usersToNotify', usersToNotify);
   });
+  
   return usersToNotify;
 }
+
+/**
+ * Sends Slack notifications to users with missing timesheet entries
+ * 
+ * Creates a formatted Slack message with user mentions and sends it to
+ * the configured Slack channel. Only sends notifications if there are
+ * users to notify.
+ * 
+ * @param {Array} usersToNotify - Array of users who need notification
+ * @param {string} timeSheetDateToCheck - Date that was checked in YYYY-MM-DD format
+ * @returns {Promise<void>}
+ * @throws {Error} If Slack API request fails
+ */
 async function slackNotify(usersToNotify, timeSheetDateToCheck) {
   console.log('slackNotify');
+  
+  // Only proceed if there are users to notify
   if (usersToNotify && usersToNotify.length) {
     const slackUsers = await getSlackUsers(process.env.SLACK_TOKEN);
+    
+    // Match Harvest users with Slack users and format notification text
     usersToNotify.forEach((user) => {
       const fullName = `${user.first_name} ${user.last_name}`;
       const slackUser = slackUsers.find(
@@ -89,14 +180,19 @@ async function slackNotify(usersToNotify, timeSheetDateToCheck) {
           ].includes(fullName.toLowerCase()) ||
           (slackUser.profile.email || '').toLowerCase() === user.email.toLowerCase()
       );
+      
+      // Format user mention with hours logged
       user.slackUser = slackUser
         ? `<@${slackUser.id}> (Hours logged: ${user.totalHours})`
         : `${fullName} (Hours logged: ${user.totalHours})`;
     });
+    
     console.log(
       'usersToNotify',
       usersToNotify.map((user) => user.slackUser)
     );
+    
+    // Create Slack message blocks
     const slackBlocks = [
       {
         type: 'section',
@@ -146,6 +242,8 @@ async function slackNotify(usersToNotify, timeSheetDateToCheck) {
         ],
       },
     ];
+    
+    // Send message to Slack
     const response = await fetch(
       `https://slack.com/api/chat.postMessage?channel=${
         process.env.SLACK_CHANNEL
@@ -162,20 +260,44 @@ async function slackNotify(usersToNotify, timeSheetDateToCheck) {
     );
     const data = await response.json();
     console.log('slackResponse', data);
-  } else return;
+  } else {
+    return; // No users to notify
+  }
 }
+
+/**
+ * Main application function for daily timesheet notifications
+ * 
+ * Determines the appropriate date to check based on the current weekday:
+ * - Monday: checks Friday (3 days back)
+ * - Tuesday-Friday: checks the previous day
+ * - Weekends: no action taken
+ * 
+ * Retrieves users with insufficient hours and sends Slack notifications.
+ * 
+ * @returns {Promise<void>}
+ */
 async function app() {
   let timeSheetDateToCheck;
   const weekday = moment().format('dddd');
+  
+  // Only run on weekdays
   if (!['Saturday', 'Sunday'].includes(weekday)) {
+    // Determine which date to check based on current day
     if (['Tuesday', 'Wednesday', 'Thursday', 'Friday'].includes(weekday)) {
+      // Check previous day
       timeSheetDateToCheck = moment().subtract(1, 'days').format('YYYY-MM-DD');
     } else {
+      // Monday: check Friday (3 days back)
       timeSheetDateToCheck = moment().subtract(3, 'days').format('YYYY-MM-DD');
     }
+    
+    // Get users to notify and send Slack message
     const usersToNotify = [...(await dteligence(timeSheetDateToCheck))];
     await slackNotify(usersToNotify, timeSheetDateToCheck);
     process.exit();
   }
 }
+
+// Execute the application
 app();

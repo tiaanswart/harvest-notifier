@@ -1,369 +1,248 @@
-# Harvest Slack Notifier
+# Harvest Notifier
 
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/tiaanswart/harvest-notifier)
+An automated integration between Harvest and Slack that sends friendly reminders to team members who haven't logged their working hours in Harvest.
 
-Harvest Slack Notifier is an automated integration between Harvest time tracking and Slack that sends intelligent reminders to team members who haven't logged their working hours. This Node.js application runs on Heroku Scheduler and helps ensure consistent time tracking across your organization.
+## Overview
 
-## 🚀 Features
+The Harvest Notifier system consists of three main modules that run on different schedules:
 
-### Report Types
+- **Daily Notifications** (`daily.js`) - Runs on weekdays to check the previous working day
+- **Weekly Notifications** (`weekly.js`) - Runs on Fridays to check the entire week
+- **Monthly Notifications** (`monthly.js`) - Runs on the last day of each month to check the entire month
 
-- **Daily Reports**: Generated on weekdays (except Monday) to notify users who haven't logged time for the previous day
-- **Weekly Reports**: Generated every Friday to notify users who haven't logged sufficient hours for the entire week
-- **Monthly Reports**: Generated on the last day of each month to notify users who haven't logged sufficient hours for the month
+## Features
 
-### Key Capabilities
+- 🔄 **Automated Scheduling**: Different notification frequencies for different time periods
+- 👥 **User Matching**: Automatically matches Harvest users with Slack users for personalized mentions
+- 📊 **Flexible Thresholds**: Configurable hour thresholds for different notification types
+- 🚫 **User Exclusion**: Whitelist system to exclude specific users from notifications
+- 📱 **Rich Slack Messages**: Interactive Slack messages with buttons and formatted user mentions
+- 📅 **Smart Date Logic**: Handles weekends, holidays, and partial weeks correctly
 
-- ✅ **Smart User Matching**: Automatically matches Harvest users with Slack users by name or email
-- ✅ **Mention Integration**: Directly mentions users in Slack for immediate attention
-- ✅ **Quick Action Buttons**: One-click access to Harvest time entry
-- ✅ **Flexible Thresholds**: Configurable minimum hour requirements
-- ✅ **Whitelist Support**: Exclude specific users (managers, admins) from notifications
-- ✅ **Multi-Account Support**: Handle multiple Harvest accounts (DTELIGENCE, SLEEQ_DIGITAL)
-- ✅ **Workday Calculation**: Intelligent calculation of expected working days for monthly reports
+## Architecture
 
-## 📋 Prerequisites
-
-Before setting up the Harvest Slack Notifier, ensure you have:
-
-- A Harvest account with API access
-- A Slack workspace with admin permissions
-- A Heroku account (free tier works)
-- Node.js knowledge (for local development/testing)
-
-## 🔧 Installation & Setup
-
-### Step 1: Harvest API Setup
-
-1. **Create Personal Access Token**:
-   - Go to [Harvest Developer Portal](https://id.getharvest.com/developers)
-   - Create a new Personal Access Token
-   - Note down your Account ID (found in your Harvest account settings)
-
-2. **Verify API Access**:
-   - Ensure your token has access to:
-     - User data (for team member information)
-     - Time reports (for checking logged hours)
-
-### Step 2: Slack App Configuration
-
-1. **Create Slack App**:
-   - Visit [Slack API Apps](https://api.slack.com/apps)
-   - Click "Create New App" → "From scratch"
-   - Name your app (e.g., "Harvest Notifier")
-   - Select your workspace
-
-2. **Configure Bot Permissions**:
-   - Go to "OAuth & Permissions" in the sidebar
-   - Add the following Bot Token Scopes:
-     ```
-     chat:write
-     users:read
-     users:read.email
-     ```
-   - Install the app to your workspace
-   - Copy the "Bot User OAuth Token" (starts with `xoxb-`)
-
-3. **Add Bot to Channel**:
-   - Invite the bot to the channel where you want notifications
-   - Note the channel name (e.g., `#timesheets`)
-
-### Step 3: Deploy to Heroku
-
-#### Option A: One-Click Deploy (Recommended)
-
-1. Click the "Deploy to Heroku" button above
-2. Fill in the required environment variables (see Configuration section)
-3. Deploy the application
-
-#### Option B: Manual Deploy
-
-```bash
-# Clone the repository
-git clone https://github.com/tiaanswart/harvest-notifier.git
-cd harvest-notifier
-
-# Create Heroku app
-heroku create your-harvest-notifier
-
-# Set environment variables
-heroku config:set HARVEST_TOKEN=your-harvest-token
-heroku config:set DTELIGENCE_HARVEST_ACCOUNT_ID=your-account-id
-heroku config:set SLACK_TOKEN=xoxb-your-slack-token
-heroku config:set SLACK_CHANNEL=#your-channel
-
-# Deploy
-git push heroku main
-```
-
-### Step 4: Configure Environment Variables
-
-Set the following environment variables in your Heroku app:
-
-#### Required Variables
-
-```bash
-# Harvest Configuration
-HARVEST_TOKEN=your-harvest-personal-access-token
-DTELIGENCE_HARVEST_ACCOUNT_ID=your-harvest-account-id
-SLEEQ_DIGITAL_HARVEST_ACCOUNT_ID=your-second-account-id
-
-# Slack Configuration
-SLACK_TOKEN=xoxb-your-slack-bot-token
-SLACK_CHANNEL=#your-notification-channel
-```
-
-#### Optional Variables
-
-```bash
-# User Whitelists (comma-separated emails)
-DTELIGENCE_EMAILS_WHITELIST=manager@company.com,admin@company.com
-SLEEQ_DIGITAL_EMAILS_WHITELIST=manager@company.com,admin@company.com
-
-# Hour Thresholds
-MISSING_HOURS_THRESHOLD=1.0
-```
-
-### Step 5: Configure Heroku Scheduler
-
-1. **Add Scheduler Add-on**:
-   ```bash
-   heroku addons:create scheduler:standard
-   ```
-
-2. **Configure Jobs**:
-   - Open Heroku Scheduler dashboard
-   - Add the following jobs:
-
-   **Daily Report** (runs every weekday at 9:00 AM):
-   ```
-   node daily.js
-   ```
-
-   **Weekly Report** (runs every Friday at 10:00 AM):
-   ```
-   node weekly.js
-   ```
-
-   **Monthly Report** (runs daily at 11:00 AM - will only execute on month end):
-   ```
-   node monthly.js
-   ```
-
-## ⚙️ Configuration Details
-
-### Environment Variables Reference
-
-| Variable | Required | Description | Example |
-|----------|----------|-------------|---------|
-| `HARVEST_TOKEN` | Yes | Personal access token from Harvest | `harvest-token-here` |
-| `DTELIGENCE_HARVEST_ACCOUNT_ID` | Yes | Primary Harvest account ID | `1234567` |
-| `SLEEQ_DIGITAL_HARVEST_ACCOUNT_ID` | Yes | Secondary Harvest account ID | `7654321` |
-| `SLACK_TOKEN` | Yes | Bot user OAuth token from Slack | `xoxb-token-here` |
-| `SLACK_CHANNEL` | Yes | Channel name for notifications | `#timesheets` |
-| `DTELIGENCE_EMAILS_WHITELIST` | No | Comma-separated emails to exclude | `admin@company.com,manager@company.com` |
-| `SLEEQ_DIGITAL_EMAILS_WHITELIST` | No | Comma-separated emails to exclude | `admin@company.com,manager@company.com` |
-| `MISSING_HOURS_THRESHOLD` | No | Minimum hours before notification (default: 1.0) | `2.5` |
-
-### Report Scheduling Logic
-
-#### Daily Reports (`daily.js`)
-- **When**: Weekdays (Tuesday-Friday)
-- **Checks**: Previous day's hours
-- **Threshold**: `MISSING_HOURS_THRESHOLD` hours
-- **Special Case**: Monday checks Friday's hours (3 days back)
-
-#### Weekly Reports (`weekly.js`)
-- **When**: Every Friday
-- **Checks**: Monday to Friday of current week
-- **Threshold**: `MISSING_HOURS_THRESHOLD * 5` hours (5 workdays)
-
-#### Monthly Reports (`monthly.js`)
-- **When**: Last day of each month
-- **Checks**: Entire month
-- **Threshold**: `MISSING_HOURS_THRESHOLD * workdays_in_month`
-- **Workday Calculation**: Excludes weekends automatically
-
-## 🏗️ Architecture Overview
-
-### Project Structure
+### File Structure
 
 ```
 harvest-notifier/
-├── app.js              # Main entry point (minimal)
-├── daily.js            # Daily report logic
-├── weekly.js           # Weekly report logic
-├── monthly.js          # Monthly report logic
-├── package.json        # Dependencies and metadata
-├── app.json           # Heroku deployment configuration
-└── README.md          # This documentation
+├── app.js          # Main entry point (loads environment and exits)
+├── daily.js        # Daily timesheet notifications
+├── weekly.js       # Weekly timesheet notifications  
+├── monthly.js      # Monthly timesheet notifications
+├── package.json    # Dependencies and project metadata
+└── README.md       # This documentation
 ```
 
 ### Core Functions
 
-#### Harvest Integration
-- `getHarvestUsers()`: Fetches active users from Harvest API
-- `getHarvestTeamTimeReport()`: Retrieves time reports for specified date range
-- User filtering with whitelist support
+Each module contains the following core functions:
 
-#### Slack Integration
-- `getSlackUsers()`: Fetches workspace users from Slack API
-- `slackNotify()`: Sends formatted notifications with user mentions
-- Automatic user matching by name or email
+- `getHarvestUsers()` - Retrieves active users from Harvest API
+- `getHarvestTeamTimeReport()` - Fetches time reports for a date range
+- `getSlackUsers()` - Retrieves users from Slack workspace
+- `dteligence()` - Analyzes data and identifies users needing notifications
+- `slackNotify()` - Sends formatted Slack notifications
+- `app()` - Main application logic and scheduling
 
-#### Business Logic
-- `dteligence()`: Main processing function for each report type
-- Workday calculation for monthly reports
-- Threshold-based filtering
+## Installation
 
-### Data Flow
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd harvest-notifier
+   ```
 
-1. **Scheduler Trigger** → Script execution
-2. **Date Calculation** → Determine report period
-3. **Harvest API Calls** → Fetch users and time data
-4. **Data Processing** → Filter users below threshold
-5. **Slack User Matching** → Match Harvest users to Slack users
-6. **Notification Generation** → Create formatted Slack message
-7. **Slack API Call** → Send notification to channel
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-## 🔍 Troubleshooting
+3. **Set up environment variables**
+   Create a `.env` file in the root directory with the following variables:
 
-### Common Issues
+   ```env
+   # Harvest API Configuration
+   HARVEST_TOKEN=your_harvest_api_token
+   DTELIGENCE_HARVEST_ACCOUNT_ID=your_harvest_account_id
+   
+   # Slack Configuration
+   SLACK_TOKEN=your_slack_bot_token
+   SLACK_CHANNEL=your_slack_channel_id
+   
+   # Notification Settings
+   MISSING_HOURS_THRESHOLD=8
+   DTELIGENCE_EMAILS_WHITELIST=user1@example.com,user2@example.com
+   ```
 
-#### "No notifications being sent"
+## Configuration
 
-**Possible Causes:**
-- All users have logged sufficient hours
-- Environment variables not set correctly
-- Scheduler jobs not configured
+### Environment Variables
 
-**Debugging Steps:**
-1. Check Heroku logs: `heroku logs --tail`
-2. Verify environment variables: `heroku config`
-3. Test manually: `heroku run node daily.js`
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `HARVEST_TOKEN` | Harvest API access token | `Bearer token from Harvest` |
+| `DTELIGENCE_HARVEST_ACCOUNT_ID` | Harvest account ID | `123456` |
+| `SLACK_TOKEN` | Slack bot user OAuth token | `xoxb-token` |
+| `SLACK_CHANNEL` | Slack channel ID to post notifications | `C1234567890` |
+| `MISSING_HOURS_THRESHOLD` | Minimum hours required per day | `8` |
+| `DTELIGENCE_EMAILS_WHITELIST` | Comma-separated emails to exclude | `admin@company.com` |
 
-#### "Users not being mentioned in Slack"
+### API Permissions Required
 
-**Possible Causes:**
-- Name mismatch between Harvest and Slack
-- Email addresses don't match
-- Slack user is inactive or deleted
+#### Harvest API
+- **Users**: Read access to retrieve team members
+- **Reports**: Read access to retrieve time reports
 
-**Solutions:**
-1. Ensure Harvest user names match Slack display names
-2. Verify email addresses are consistent
-3. Check Slack user status
+#### Slack API
+- **users:read**: To retrieve workspace users for matching
+- **chat:write**: To post messages to channels
+- **users:read.email**: To match users by email address
 
-#### "Incorrect hour calculations"
+## Usage
 
-**Possible Causes:**
-- Wrong `MISSING_HOURS_THRESHOLD` value
-- Timezone issues
-- Date range calculation errors
+### Manual Execution
 
-**Solutions:**
-1. Verify threshold value in environment variables
-2. Check date formatting in logs
-3. Ensure consistent timezone handling
-
-### Log Analysis
-
-The application provides detailed console logging. Key log messages:
-
-- `getHarvestUsers`: User fetching process
-- `getHarvestTeamTimeReport`: Time report retrieval
-- `getSlackUsers`: Slack user fetching
-- `dteligence`: Main processing function
-- `slackNotify`: Notification sending
-- `usersToNotify`: List of users to be notified
-
-### Manual Testing
-
-Test individual scripts locally:
+Run any of the notification modules directly:
 
 ```bash
-# Set up environment variables
-export HARVEST_TOKEN=your-token
-export DTELIGENCE_HARVEST_ACCOUNT_ID=your-account-id
-export SLACK_TOKEN=your-slack-token
-export SLACK_CHANNEL=#your-channel
-
-# Test daily report
+# Daily notifications
 node daily.js
 
-# Test weekly report
+# Weekly notifications  
 node weekly.js
 
-# Test monthly report
+# Monthly notifications
 node monthly.js
 ```
 
-## 🔒 Security Considerations
+### Scheduled Execution
 
-### API Token Security
-- Never commit tokens to version control
-- Use Heroku environment variables for all sensitive data
-- Rotate tokens regularly
-- Use minimal required permissions
-
-### Data Privacy
-- Only active users are processed
-- Whitelist functionality prevents unnecessary notifications
-- User data is not stored persistently
-
-### Rate Limiting
-- Harvest API: Respect rate limits (100 requests per 15 seconds)
-- Slack API: Respect rate limits (50 requests per second)
-- Built-in delays and error handling
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature-name`
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-### Development Setup
+Set up cron jobs or scheduled tasks to run the modules automatically:
 
 ```bash
-# Clone repository
-git clone https://github.com/tiaanswart/harvest-notifier.git
-cd harvest-notifier
+# Daily at 9:00 AM on weekdays
+0 9 * * 1-5 cd /path/to/harvest-notifier && node daily.js
 
-# Install dependencies
-npm install
+# Weekly on Fridays at 5:00 PM
+0 17 * * 5 cd /path/to/harvest-notifier && node weekly.js
 
-# Create .env file for local testing
-cp .env.example .env
-# Edit .env with your test credentials
-
-# Run tests (when implemented)
-npm test
+# Monthly on the last day at 4:00 PM
+0 16 28-31 * * [ "$(date +\%d -d tomorrow)" = "01" ] && cd /path/to/harvest-notifier && node monthly.js
 ```
 
-## 📄 License
+## Notification Logic
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+### Daily Notifications (`daily.js`)
 
-## 🆘 Support
+- **Schedule**: Runs on weekdays (Monday-Friday)
+- **Check Period**: Previous working day
+- **Logic**: 
+  - Monday: checks Friday (3 days back)
+  - Tuesday-Friday: checks previous day
+- **Threshold**: `MISSING_HOURS_THRESHOLD` hours
 
-For issues and questions:
+### Weekly Notifications (`weekly.js`)
 
-1. Check the troubleshooting section above
-2. Review Heroku logs for error details
-3. Open an issue on GitHub with:
-   - Error messages
-   - Environment configuration (without sensitive data)
-   - Steps to reproduce
+- **Schedule**: Runs on Fridays
+- **Check Period**: Monday to Friday of current week
+- **Threshold**: `MISSING_HOURS_THRESHOLD * 5` hours
 
-## 🔄 Version History
+### Monthly Notifications (`monthly.js`)
 
-- **v1.0.0**: Initial release with daily, weekly, and monthly reports
-- Support for multiple Harvest accounts
-- Slack integration with user mentions
-- Configurable thresholds and whitelists
+- **Schedule**: Runs on the last day of each month
+- **Check Period**: First to last day of current month
+- **Threshold**: `MISSING_HOURS_THRESHOLD * workdays_in_month` hours
+- **Workday Calculation**: Excludes weekends using `workday_count()` function
 
----
+## User Matching Logic
 
-**Note**: This application is designed for automated time tracking compliance. Ensure your team is aware of the notification system and has proper time tracking policies in place.
+The system matches Harvest users with Slack users using the following criteria (in order):
+
+1. **Real Name**: `slackUser.profile.real_name_normalized`
+2. **Display Name**: `slackUser.profile.display_name_normalized`  
+3. **Email Address**: `slackUser.profile.email`
+
+If a match is found, the user is mentioned with `<@slack_user_id>`. If no match is found, the full name is displayed.
+
+## Slack Message Format
+
+Notifications include:
+
+- **Header**: Friendly reminder message with team emoji
+- **Date Range**: Clear indication of the period being checked
+- **User List**: Formatted list of users with hours logged
+- **Call to Action**: Instructions to report hours and react
+- **Quick Action Button**: Direct link to Harvest time entry
+
+## Error Handling
+
+The system includes basic error handling:
+
+- API request failures are logged to console
+- Invalid responses are handled gracefully
+- Missing environment variables will cause the application to fail early
+- No notifications are sent if there are no users to notify
+
+## Dependencies
+
+- **dotenv**: Environment variable management
+- **moment**: Date manipulation and formatting
+- **node-fetch**: HTTP requests for API calls
+
+## Development
+
+### Adding New Teams
+
+To add notifications for additional teams:
+
+1. Create new environment variables for the team's Harvest account
+2. Duplicate the `dteligence()` function and rename it for the new team
+3. Update the `app()` function to call the new team function
+4. Add appropriate scheduling logic
+
+### Customizing Notifications
+
+Modify the `slackBlocks` array in the `slackNotify()` function to customize:
+
+- Message content and tone
+- Button actions and URLs
+- Emoji usage
+- Message formatting
+
+## Troubleshooting
+
+### Common Issues
+
+1. **No notifications sent**
+   - Check if users have logged sufficient hours
+   - Verify environment variables are set correctly
+   - Ensure API tokens have proper permissions
+
+2. **User matching failures**
+   - Verify Slack user profiles have correct names/emails
+   - Check that Harvest user names match Slack display names
+
+3. **API errors**
+   - Validate API tokens and account IDs
+   - Check network connectivity
+   - Verify API rate limits
+
+### Debug Mode
+
+Add console logging to debug issues:
+
+```javascript
+console.log('Debug info:', {
+  harvestUsers: harvestUsers.length,
+  timeReports: harvestTeamTimeReport.length,
+  usersToNotify: usersToNotify.length
+});
+```
+
+## License
+
+MIT License - see LICENSE file for details.
+
+## Support
+
+For issues and questions, contact: tiaan.swart@sleeq.global

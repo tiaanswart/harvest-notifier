@@ -5,13 +5,42 @@
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node app.js"
+    "start": "node app.js",
+    "daily": "node daily.js",
+    "weekly": "node weekly.js",
+    "monthly": "node monthly.js",
+    "docs": "jsdoc -c jsdoc.json",
+    "docs:serve": "jsdoc -c jsdoc.json && npx http-server docs -p 8080 -o"
   },
+  "keywords": [
+    "harvest",
+    "slack",
+    "timesheet",
+    "notifications",
+    "automation",
+    "api",
+    "integration"
+  ],
   "author": "tiaan.swart@sleeq.global",
   "license": "MIT",
   "dependencies": {
     "dotenv": "^16.4.5",
     "moment": "^2.29.4",
     "node-fetch": "^2.6.6"
-  }
+  },
+  "devDependencies": {
+    "jsdoc": "^4.0.2",
+    "ink-docstrap": "^1.3.2"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tiaanswart/harvest-notifier.git"
+  },
+  "bugs": {
+    "url": "https://github.com/tiaanswart/harvest-notifier/issues"
+  },
+  "homepage": "https://github.com/tiaanswart/harvest-notifier#readme"
 }
