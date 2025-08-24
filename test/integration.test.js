@@ -1,8 +1,8 @@
 /**
  * @fileoverview Integration tests for Harvest Notifier
- * 
+ *
  * Tests the complete workflow from Harvest data analysis to Slack notifications.
- * 
+ *
  * @author tiaan.swart@sleeq.global
  * @version 1.0.0
  * @license MIT
@@ -32,40 +32,40 @@ describe('Integration Tests', () => {
       first_name: 'John',
       last_name: 'Doe',
       email: 'john@example.com',
-      is_active: true
+      is_active: true,
     },
     {
       id: 2,
       first_name: 'Jane',
       last_name: 'Smith',
       email: 'jane@example.com',
-      is_active: true
+      is_active: true,
     },
     {
       id: 3,
       first_name: 'Bob',
       last_name: 'Wilson',
       email: 'bob@example.com',
-      is_active: true
-    }
+      is_active: true,
+    },
   ];
 
   const mockTimeReports = [
     {
       user_id: 1,
       total_hours: 5.5,
-      date: '2024-01-15'
+      date: '2024-01-15',
     },
     {
       user_id: 2,
       total_hours: 2.0,
-      date: '2024-01-15'
+      date: '2024-01-15',
     },
     {
       user_id: 3,
       total_hours: 8.5,
-      date: '2024-01-15'
-    }
+      date: '2024-01-15',
+    },
   ];
 
   const mockSlackUsers = [
@@ -74,25 +74,25 @@ describe('Integration Tests', () => {
       profile: {
         real_name_normalized: 'John Doe',
         display_name_normalized: 'John',
-        email: 'john@example.com'
-      }
+        email: 'john@example.com',
+      },
     },
     {
       id: 'U789012',
       profile: {
         real_name_normalized: 'Jane Smith',
         display_name_normalized: 'Jane',
-        email: 'jane@example.com'
-      }
+        email: 'jane@example.com',
+      },
     },
     {
       id: 'U345678',
       profile: {
         real_name_normalized: 'Bob Wilson',
         display_name_normalized: 'Bob',
-        email: 'bob@example.com'
-      }
-    }
+        email: 'bob@example.com',
+      },
+    },
   ];
 
   const mockSlackBlocks = [
@@ -100,15 +100,15 @@ describe('Integration Tests', () => {
       type: 'section',
       text: {
         type: 'mrkdwn',
-        text: 'Test message'
-      }
-    }
+        text: 'Test message',
+      },
+    },
   ];
 
   beforeEach(() => {
     // Clear all mocks
     vi.clearAllMocks();
-    
+
     // Reset environment variables
     process.env.HARVEST_ACCOUNT_ID = 'test-account-id';
     process.env.HARVEST_TOKEN = 'test-harvest-token';
@@ -134,7 +134,7 @@ describe('Integration Tests', () => {
           last_name: 'Doe',
           email: 'john@example.com',
           totalHours: 5.5,
-          slackUser: '<@U123456>'
+          slackUser: '<@U123456>',
         },
         {
           id: 2,
@@ -142,8 +142,8 @@ describe('Integration Tests', () => {
           last_name: 'Smith',
           email: 'jane@example.com',
           totalHours: 2.0,
-          slackUser: '<@U789012>'
-        }
+          slackUser: '<@U789012>',
+        },
       ]);
       createDailyReminderMessage.mockReturnValue(mockSlackBlocks);
       sendSlackMessage.mockResolvedValue({ ok: true });
@@ -165,7 +165,11 @@ describe('Integration Tests', () => {
       expect(getSlackUsers).toHaveBeenCalledWith('test-slack-token');
       expect(matchUsersWithSlack).toHaveBeenCalled();
       expect(createDailyReminderMessage).toHaveBeenCalled();
-      expect(sendSlackMessage).toHaveBeenCalledWith('#general', mockSlackBlocks, 'test-slack-token');
+      expect(sendSlackMessage).toHaveBeenCalledWith(
+        '#general',
+        mockSlackBlocks,
+        'test-slack-token'
+      );
 
       // Verify logging
       expect(Logger.appStart).toHaveBeenCalledWith('daily', expect.any(Object));
@@ -179,16 +183,16 @@ describe('Integration Tests', () => {
           first_name: 'John',
           last_name: 'Doe',
           email: 'john@example.com',
-          is_active: true
-        }
+          is_active: true,
+        },
       ];
 
       const timeReportsWithSufficientHours = [
         {
           user_id: 1,
           total_hours: 8.5, // Sufficient hours
-          date: '2024-01-15'
-        }
+          date: '2024-01-15',
+        },
       ];
 
       getHarvestUsers.mockResolvedValue(usersWithSufficientHours);
@@ -249,15 +253,17 @@ describe('Integration Tests', () => {
         2, // users to notify (John with 5.5 hours, Jane with 2.0 hours)
         expect.arrayContaining([
           expect.objectContaining({ id: 1, totalHours: 5.5 }),
-          expect.objectContaining({ id: 2, totalHours: 2.0 })
+          expect.objectContaining({ id: 2, totalHours: 2.0 }),
         ])
       );
 
       expect(usersToNotify).toHaveLength(2);
-      expect(usersToNotify).toEqual(expect.arrayContaining([
-        expect.objectContaining({ id: 1, totalHours: 5.5 }),
-        expect.objectContaining({ id: 2, totalHours: 2.0 })
-      ]));
+      expect(usersToNotify).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: 1, totalHours: 5.5 }),
+          expect.objectContaining({ id: 2, totalHours: 2.0 }),
+        ])
+      );
     });
 
     test('should handle users with multiple time entries', async () => {
@@ -267,21 +273,21 @@ describe('Integration Tests', () => {
           first_name: 'John',
           last_name: 'Doe',
           email: 'john@example.com',
-          is_active: true
-        }
+          is_active: true,
+        },
       ];
 
       const multipleTimeReports = [
         {
           user_id: 1,
           total_hours: 4.0,
-          date: '2024-01-15'
+          date: '2024-01-15',
         },
         {
           user_id: 1,
           total_hours: 3.5,
-          date: '2024-01-15'
-        }
+          date: '2024-01-15',
+        },
       ];
 
       getHarvestUsers.mockResolvedValue(usersWithMultipleEntries);
@@ -294,9 +300,7 @@ describe('Integration Tests', () => {
         'daily',
         1,
         1, // user should be notified since 7.5 < 8
-        expect.arrayContaining([
-          expect.objectContaining({ id: 1, totalHours: 7.5 })
-        ])
+        expect.arrayContaining([expect.objectContaining({ id: 1, totalHours: 7.5 })])
       );
 
       expect(usersToNotify).toHaveLength(1);
@@ -310,8 +314,8 @@ describe('Integration Tests', () => {
           first_name: 'John',
           last_name: 'Doe',
           email: 'john@example.com',
-          is_active: true
-        }
+          is_active: true,
+        },
       ];
 
       const emptyTimeReports = [];
@@ -326,9 +330,7 @@ describe('Integration Tests', () => {
         'daily',
         1,
         1, // user should be notified since 0 < 8
-        expect.arrayContaining([
-          expect.objectContaining({ id: 1, totalHours: 0 })
-        ])
+        expect.arrayContaining([expect.objectContaining({ id: 1, totalHours: 0 })])
       );
 
       expect(usersToNotify).toHaveLength(1);
@@ -348,8 +350,8 @@ describe('Integration Tests', () => {
           last_name: 'Doe',
           email: 'john@example.com',
           totalHours: 5.5,
-          slackUser: '<@U123456>'
-        }
+          slackUser: '<@U123456>',
+        },
       ]);
       createDailyReminderMessage.mockReturnValue(mockSlackBlocks);
       sendSlackMessage.mockResolvedValue({ ok: true });
@@ -361,7 +363,7 @@ describe('Integration Tests', () => {
       expect(matchUsersWithSlack).toHaveBeenCalledWith(
         expect.arrayContaining([
           expect.objectContaining({ id: 1, totalHours: 5.5 }),
-          expect.objectContaining({ id: 2, totalHours: 2.0 })
+          expect.objectContaining({ id: 2, totalHours: 2.0 }),
         ]),
         mockSlackUsers
       );
@@ -378,8 +380,8 @@ describe('Integration Tests', () => {
           last_name: 'Doe',
           email: 'john@example.com',
           totalHours: 5.5,
-          slackUser: 'John Doe (john@example.com)' // Fallback format
-        }
+          slackUser: 'John Doe (john@example.com)', // Fallback format
+        },
       ]);
       createDailyReminderMessage.mockReturnValue(mockSlackBlocks);
       sendSlackMessage.mockResolvedValue({ ok: true });
@@ -391,7 +393,7 @@ describe('Integration Tests', () => {
       expect(matchUsersWithSlack).toHaveBeenCalledWith(
         expect.arrayContaining([
           expect.objectContaining({ id: 1, totalHours: 5.5 }),
-          expect.objectContaining({ id: 2, totalHours: 2.0 })
+          expect.objectContaining({ id: 2, totalHours: 2.0 }),
         ]),
         mockSlackUsers
       );
@@ -408,8 +410,8 @@ describe('Integration Tests', () => {
           last_name: 'Doe',
           email: 'john@example.com',
           totalHours: 5.5,
-          slackUser: '<@U123456>'
-        }
+          slackUser: '<@U123456>',
+        },
       ]);
       createDailyReminderMessage.mockReturnValue(mockSlackBlocks);
       sendSlackMessage.mockResolvedValue({ ok: true });
@@ -420,7 +422,7 @@ describe('Integration Tests', () => {
       // Verify that createDailyReminderMessage was called with correct parameters
       expect(createDailyReminderMessage).toHaveBeenCalledWith(
         expect.arrayContaining([
-          expect.objectContaining({ slackUser: expect.stringContaining('<@') })
+          expect.objectContaining({ slackUser: expect.stringContaining('<@') }),
         ]),
         '2024-01-15'
       );
@@ -452,7 +454,11 @@ describe('Integration Tests', () => {
         'custom@example.com'
       );
       expect(getSlackUsers).toHaveBeenCalledWith('custom-slack-token');
-      expect(sendSlackMessage).toHaveBeenCalledWith('#custom-channel', expect.anything(), 'custom-slack-token');
+      expect(sendSlackMessage).toHaveBeenCalledWith(
+        '#custom-channel',
+        expect.anything(),
+        'custom-slack-token'
+      );
     });
 
     test('should handle missing environment variables gracefully', async () => {

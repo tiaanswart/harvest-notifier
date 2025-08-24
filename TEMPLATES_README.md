@@ -25,10 +25,12 @@ All Slack message templates are now centralized in `templates/slack-templates.js
 ### Available Template Functions
 
 1. **`createDailyReminderMessage(usersToNotify, timeSheetDateToCheck)`**
+
    - Creates daily timesheet reminder messages
    - Used by `daily.js`
 
 2. **`createWeeklyReminderMessage(usersToNotify, timeSheetDateToCheckFrom, timeSheetDateToCheckTo)`**
+
    - Creates weekly timesheet reminder messages
    - Used by `weekly.js`
 
@@ -47,8 +49,8 @@ function createDailyReminderMessage(usersToNotify, timeSheetDateToCheck) {
       type: 'section',
       text: {
         type: 'mrkdwn',
-        text: "Your message text here"
-      }
+        text: 'Your message text here',
+      },
     },
     // ... more blocks
   ];
@@ -58,6 +60,7 @@ function createDailyReminderMessage(usersToNotify, timeSheetDateToCheck) {
 ### Common Elements
 
 All templates include:
+
 - Header section with team greeting
 - Date range information
 - List of users with insufficient hours
@@ -83,8 +86,8 @@ function createDailyReminderMessage(usersToNotify, timeSheetDateToCheck) {
       type: 'section',
       text: {
         type: 'mrkdwn',
-        text: "New custom section here"
-      }
+        text: 'New custom section here',
+      },
     },
     // ... rest of blocks
   ];
@@ -100,7 +103,7 @@ function createDailyReminderMessage(usersToNotify, timeSheetDateToCheck) {
       type: 'section',
       text: {
         type: 'mrkdwn',
-        text: "*Good morning team! 🌅 Just a quick reminder to update your timesheets in Harvest. Keeping accurate time records helps us track project progress effectively.*",
+        text: '*Good morning team! 🌅 Just a quick reminder to update your timesheets in Harvest. Keeping accurate time records helps us track project progress effectively.*',
       },
     },
     // ... rest of blocks

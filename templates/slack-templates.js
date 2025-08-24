@@ -1,9 +1,9 @@
 /**
  * @fileoverview Slack message templates for Harvest Notifier
- * 
+ *
  * This module contains all Slack message templates used by the Harvest Notifier system.
  * Templates are separated from business logic to make them easier to modify and maintain.
- * 
+ *
  * @author tiaan.swart@sleeq.global
  * @version 1.0.0
  * @license MIT
@@ -14,26 +14,26 @@ import Logger from '../utils/logger.js';
 
 /**
  * Creates a daily timesheet reminder message
- * 
+ *
  * @param {Array} usersToNotify - Array of users with their Slack mentions and hours
  * @param {string} timeSheetDateToCheck - Date that was checked in YYYY-MM-DD format
  * @returns {Array} Slack blocks for the message
  */
 function createDailyReminderMessage(usersToNotify, timeSheetDateToCheck) {
-  Logger.functionEntry('createDailyReminderMessage', { 
+  Logger.functionEntry('createDailyReminderMessage', {
     usersToNotifyCount: usersToNotify?.length || 0,
-    timeSheetDateToCheck 
+    timeSheetDateToCheck,
   });
-  
+
   Logger.info('Creating daily reminder message', {
     date: timeSheetDateToCheck,
     formattedDate: moment(timeSheetDateToCheck).format('MMMM Do YYYY'),
-    usersCount: usersToNotify?.length || 0
+    usersCount: usersToNotify?.length || 0,
   });
-  
+
   // Handle case where usersToNotify is null or undefined
   const usersList = usersToNotify && Array.isArray(usersToNotify) ? usersToNotify : [];
-  
+
   const messageBlocks = [
     {
       type: 'section',
@@ -83,45 +83,49 @@ function createDailyReminderMessage(usersToNotify, timeSheetDateToCheck) {
       ],
     },
   ];
-  
+
   Logger.debug('Daily reminder message blocks created', {
     blocksCount: messageBlocks.length,
-    usersList: usersToNotify?.map(user => user.slackUser) || []
+    usersList: usersToNotify?.map((user) => user.slackUser) || [],
   });
-  
-  Logger.functionExit('createDailyReminderMessage', { 
-    blocksCount: messageBlocks.length 
+
+  Logger.functionExit('createDailyReminderMessage', {
+    blocksCount: messageBlocks.length,
   });
-  
+
   return messageBlocks;
 }
 
 /**
  * Creates a weekly timesheet reminder message
- * 
+ *
  * @param {Array} usersToNotify - Array of users with their Slack mentions and hours
  * @param {string} timeSheetDateToCheckFrom - Start date of week in YYYY-MM-DD format
  * @param {string} timeSheetDateToCheckTo - End date of week in YYYY-MM-DD format
  * @returns {Array} Slack blocks for the message
  */
-function createWeeklyReminderMessage(usersToNotify, timeSheetDateToCheckFrom, timeSheetDateToCheckTo) {
-  Logger.functionEntry('createWeeklyReminderMessage', { 
+function createWeeklyReminderMessage(
+  usersToNotify,
+  timeSheetDateToCheckFrom,
+  timeSheetDateToCheckTo
+) {
+  Logger.functionEntry('createWeeklyReminderMessage', {
     usersToNotifyCount: usersToNotify?.length || 0,
-    timeSheetDateToCheckFrom, 
-    timeSheetDateToCheckTo 
+    timeSheetDateToCheckFrom,
+    timeSheetDateToCheckTo,
   });
-  
+
   Logger.info('Creating weekly reminder message', {
     dateFrom: timeSheetDateToCheckFrom,
     dateTo: timeSheetDateToCheckTo,
     formattedDateFrom: moment(timeSheetDateToCheckFrom).format('MMMM Do YYYY'),
     formattedDateTo: moment(timeSheetDateToCheckTo).format('MMMM Do YYYY'),
-    usersCount: usersToNotify?.length || 0
+    usersCount: usersToNotify?.length || 0,
   });
-  
+
   // Handle case where usersToNotify is null or undefined
   const usersList = usersToNotify && Array.isArray(usersToNotify) ? usersToNotify : [];
-  
+
   const messageBlocks = [
     {
       type: 'section',
@@ -171,45 +175,49 @@ function createWeeklyReminderMessage(usersToNotify, timeSheetDateToCheckFrom, ti
       ],
     },
   ];
-  
+
   Logger.debug('Weekly reminder message blocks created', {
     blocksCount: messageBlocks.length,
-    usersList: usersToNotify?.map(user => user.slackUser) || []
+    usersList: usersToNotify?.map((user) => user.slackUser) || [],
   });
-  
-  Logger.functionExit('createWeeklyReminderMessage', { 
-    blocksCount: messageBlocks.length 
+
+  Logger.functionExit('createWeeklyReminderMessage', {
+    blocksCount: messageBlocks.length,
   });
-  
+
   return messageBlocks;
 }
 
 /**
  * Creates a monthly timesheet reminder message
- * 
+ *
  * @param {Array} usersToNotify - Array of users with their Slack mentions and hours
  * @param {string} timeSheetDateToCheckFrom - Start date of month in YYYY-MM-DD format
  * @param {string} timeSheetDateToCheckTo - End date of month in YYYY-MM-DD format
  * @returns {Array} Slack blocks for the message
  */
-function createMonthlyReminderMessage(usersToNotify, timeSheetDateToCheckFrom, timeSheetDateToCheckTo) {
-  Logger.functionEntry('createMonthlyReminderMessage', { 
+function createMonthlyReminderMessage(
+  usersToNotify,
+  timeSheetDateToCheckFrom,
+  timeSheetDateToCheckTo
+) {
+  Logger.functionEntry('createMonthlyReminderMessage', {
     usersToNotifyCount: usersToNotify?.length || 0,
-    timeSheetDateToCheckFrom, 
-    timeSheetDateToCheckTo 
+    timeSheetDateToCheckFrom,
+    timeSheetDateToCheckTo,
   });
-  
+
   Logger.info('Creating monthly reminder message', {
     dateFrom: timeSheetDateToCheckFrom,
     dateTo: timeSheetDateToCheckTo,
     formattedDateFrom: moment(timeSheetDateToCheckFrom).format('MMMM Do YYYY'),
     formattedDateTo: moment(timeSheetDateToCheckTo).format('MMMM Do YYYY'),
-    usersCount: usersToNotify?.length || 0
+    usersCount: usersToNotify?.length || 0,
   });
-  
+
   // Handle case where usersToNotify is null or undefined
   const usersList = usersToNotify && Array.isArray(usersToNotify) ? usersToNotify : [];
-  
+
   const messageBlocks = [
     {
       type: 'section',
@@ -259,21 +267,17 @@ function createMonthlyReminderMessage(usersToNotify, timeSheetDateToCheckFrom, t
       ],
     },
   ];
-  
+
   Logger.debug('Monthly reminder message blocks created', {
     blocksCount: messageBlocks.length,
-    usersList: usersToNotify?.map(user => user.slackUser) || []
+    usersList: usersToNotify?.map((user) => user.slackUser) || [],
   });
-  
-  Logger.functionExit('createMonthlyReminderMessage', { 
-    blocksCount: messageBlocks.length 
+
+  Logger.functionExit('createMonthlyReminderMessage', {
+    blocksCount: messageBlocks.length,
   });
-  
+
   return messageBlocks;
 }
 
-export {
-  createDailyReminderMessage,
-  createWeeklyReminderMessage,
-  createMonthlyReminderMessage,
-};
+export { createDailyReminderMessage, createWeeklyReminderMessage, createMonthlyReminderMessage };

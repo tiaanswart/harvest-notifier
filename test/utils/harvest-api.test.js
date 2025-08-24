@@ -1,8 +1,8 @@
 /**
  * @fileoverview Tests for Harvest API utilities
- * 
+ *
  * Tests the Harvest API functions including user retrieval and time report fetching.
- * 
+ *
  * @author tiaan.swart@sleeq.global
  * @version 1.0.0
  * @license MIT
@@ -26,7 +26,7 @@ describe('Harvest API', () => {
   beforeEach(() => {
     // Clear all mocks
     vi.clearAllMocks();
-    
+
     // Reset environment variables
     delete process.env.HARVEST_ACCOUNT_ID;
     delete process.env.HARVEST_TOKEN;
@@ -42,24 +42,24 @@ describe('Harvest API', () => {
               first_name: 'John',
               last_name: 'Doe',
               email: 'john@example.com',
-              is_active: true
+              is_active: true,
             },
             {
               id: 2,
               first_name: 'Jane',
               last_name: 'Smith',
               email: 'jane@example.com',
-              is_active: true
+              is_active: true,
             },
             {
               id: 3,
               first_name: 'Bob',
               last_name: 'Inactive',
               email: 'bob@example.com',
-              is_active: false
-            }
-          ]
-        })
+              is_active: false,
+            },
+          ],
+        }),
       };
 
       fetch.mockResolvedValue(mockResponse);
@@ -81,7 +81,7 @@ describe('Harvest API', () => {
       expect(result[1].first_name).toBe('Jane');
       expect(Logger.functionEntry).toHaveBeenCalledWith('getHarvestUsers', {
         accountId: mockAccountId,
-        excludedUsers: undefined
+        excludedUsers: undefined,
       });
     });
 
@@ -94,17 +94,17 @@ describe('Harvest API', () => {
               first_name: 'John',
               last_name: 'Doe',
               email: 'john@example.com',
-              is_active: true
+              is_active: true,
             },
             {
               id: 2,
               first_name: 'Jane',
               last_name: 'Smith',
               email: 'jane@example.com',
-              is_active: true
-            }
-          ]
-        })
+              is_active: true,
+            },
+          ],
+        }),
       };
 
       fetch.mockResolvedValue(mockResponse);
@@ -125,24 +125,24 @@ describe('Harvest API', () => {
               first_name: 'John',
               last_name: 'Doe',
               email: 'john@example.com',
-              is_active: true
+              is_active: true,
             },
             {
               id: 2,
               first_name: 'Jane',
               last_name: 'Smith',
               email: 'jane@example.com',
-              is_active: true
+              is_active: true,
             },
             {
               id: 3,
               first_name: 'Bob',
               last_name: 'Wilson',
               email: 'bob@example.com',
-              is_active: true
-            }
-          ]
-        })
+              is_active: true,
+            },
+          ],
+        }),
       };
 
       fetch.mockResolvedValue(mockResponse);
@@ -157,8 +157,8 @@ describe('Harvest API', () => {
     test('should handle empty users array', async () => {
       const mockResponse = {
         json: vi.fn().mockResolvedValue({
-          users: []
-        })
+          users: [],
+        }),
       };
 
       fetch.mockResolvedValue(mockResponse);
@@ -170,7 +170,7 @@ describe('Harvest API', () => {
 
     test('should handle missing users property', async () => {
       const mockResponse = {
-        json: vi.fn().mockResolvedValue({})
+        json: vi.fn().mockResolvedValue({}),
       };
 
       fetch.mockResolvedValue(mockResponse);
@@ -182,7 +182,7 @@ describe('Harvest API', () => {
 
     test('should handle API error', async () => {
       const mockResponse = {
-        json: vi.fn().mockRejectedValue(new Error('API Error'))
+        json: vi.fn().mockRejectedValue(new Error('API Error')),
       };
 
       fetch.mockResolvedValue(mockResponse);
@@ -205,10 +205,10 @@ describe('Harvest API', () => {
               first_name: 'John',
               last_name: 'Doe',
               email: 'john@example.com',
-              is_active: true
-            }
-          ]
-        })
+              is_active: true,
+            },
+          ],
+        }),
       };
 
       fetch.mockResolvedValue(mockResponse);
@@ -216,10 +216,10 @@ describe('Harvest API', () => {
       await getHarvestUsers(mockAccountId, mockToken);
 
       expect(Logger.apiRequest).toHaveBeenCalledWith('Harvest', 'GET /v2/users', {
-        accountId: mockAccountId
+        accountId: mockAccountId,
       });
       expect(Logger.apiResponse).toHaveBeenCalledWith('Harvest', undefined, {
-        usersCount: 1
+        usersCount: 1,
       });
     });
   });
@@ -232,20 +232,25 @@ describe('Harvest API', () => {
             {
               user_id: 1,
               total_hours: 8.5,
-              date: '2024-01-01'
+              date: '2024-01-01',
             },
             {
               user_id: 2,
               total_hours: 7.0,
-              date: '2024-01-01'
-            }
-          ]
-        })
+              date: '2024-01-01',
+            },
+          ],
+        }),
       };
 
       fetch.mockResolvedValue(mockResponse);
 
-      const result = await getHarvestTeamTimeReport(mockAccountId, mockToken, mockDateFrom, mockDateTo);
+      const result = await getHarvestTeamTimeReport(
+        mockAccountId,
+        mockToken,
+        mockDateFrom,
+        mockDateTo
+      );
 
       expect(fetch).toHaveBeenCalledWith(
         `https://api.harvestapp.com/v2/reports/time/team?from=${mockDateFrom}&to=${mockDateTo}`,
@@ -266,52 +271,64 @@ describe('Harvest API', () => {
       expect(Logger.functionEntry).toHaveBeenCalledWith('getHarvestTeamTimeReport', {
         accountId: mockAccountId,
         dateFrom: mockDateFrom,
-        dateTo: mockDateTo
+        dateTo: mockDateTo,
       });
     });
 
     test('should handle empty results array', async () => {
       const mockResponse = {
         json: vi.fn().mockResolvedValue({
-          results: []
-        })
+          results: [],
+        }),
       };
 
       fetch.mockResolvedValue(mockResponse);
 
-      const result = await getHarvestTeamTimeReport(mockAccountId, mockToken, mockDateFrom, mockDateTo);
+      const result = await getHarvestTeamTimeReport(
+        mockAccountId,
+        mockToken,
+        mockDateFrom,
+        mockDateTo
+      );
 
       expect(result).toHaveLength(0);
     });
 
     test('should handle missing results property', async () => {
       const mockResponse = {
-        json: vi.fn().mockResolvedValue({})
+        json: vi.fn().mockResolvedValue({}),
       };
 
       fetch.mockResolvedValue(mockResponse);
 
-      const result = await getHarvestTeamTimeReport(mockAccountId, mockToken, mockDateFrom, mockDateTo);
+      const result = await getHarvestTeamTimeReport(
+        mockAccountId,
+        mockToken,
+        mockDateFrom,
+        mockDateTo
+      );
 
       expect(result).toHaveLength(0);
     });
 
     test('should handle API error', async () => {
       const mockResponse = {
-        json: vi.fn().mockRejectedValue(new Error('API Error'))
+        json: vi.fn().mockRejectedValue(new Error('API Error')),
       };
 
       fetch.mockResolvedValue(mockResponse);
 
-      await expect(getHarvestTeamTimeReport(mockAccountId, mockToken, mockDateFrom, mockDateTo))
-        .rejects.toThrow('API Error');
+      await expect(
+        getHarvestTeamTimeReport(mockAccountId, mockToken, mockDateFrom, mockDateTo)
+      ).rejects.toThrow('API Error');
     });
 
     test('should handle fetch error', async () => {
       fetch.mockRejectedValue(new Error('Network Error'));
 
-      await expect(getHarvestTeamTimeReport(mockAccountId, mockToken, mockDateFrom, mockDateTo))
-        .rejects.toThrow('Network Error');
+      await expect(
+        getHarvestTeamTimeReport(mockAccountId, mockToken, mockDateFrom, mockDateTo)
+      ).rejects.toThrow('Network Error');
     });
 
     test('should log API request and response', async () => {
@@ -321,10 +338,10 @@ describe('Harvest API', () => {
             {
               user_id: 1,
               total_hours: 8.5,
-              date: '2024-01-01'
-            }
-          ]
-        })
+              date: '2024-01-01',
+            },
+          ],
+        }),
       };
 
       fetch.mockResolvedValue(mockResponse);
@@ -334,18 +351,18 @@ describe('Harvest API', () => {
       expect(Logger.apiRequest).toHaveBeenCalledWith('Harvest', 'GET /v2/reports/time/team', {
         accountId: mockAccountId,
         dateFrom: mockDateFrom,
-        dateTo: mockDateTo
+        dateTo: mockDateTo,
       });
       expect(Logger.apiResponse).toHaveBeenCalledWith('Harvest', undefined, {
-        resultsCount: 1
+        resultsCount: 1,
       });
     });
 
     test('should handle different date formats', async () => {
       const mockResponse = {
         json: vi.fn().mockResolvedValue({
-          results: []
-        })
+          results: [],
+        }),
       };
 
       fetch.mockResolvedValue(mockResponse);
@@ -367,23 +384,23 @@ describe('Harvest API', () => {
       const mockResponse = {
         status: 401,
         json: vi.fn().mockResolvedValue({
-          error: 'Unauthorized'
-        })
+          error: 'Unauthorized',
+        }),
       };
 
       fetch.mockResolvedValue(mockResponse);
 
       const result = await getHarvestUsers(mockAccountId, mockToken);
-      
+
       // The function should still process the response even with non-200 status
       expect(Logger.apiResponse).toHaveBeenCalledWith('Harvest', 401, {
-        usersCount: 0
+        usersCount: 0,
       });
     });
 
     test('should handle malformed JSON response', async () => {
       const mockResponse = {
-        json: vi.fn().mockRejectedValue(new SyntaxError('Invalid JSON'))
+        json: vi.fn().mockRejectedValue(new SyntaxError('Invalid JSON')),
       };
 
       fetch.mockResolvedValue(mockResponse);

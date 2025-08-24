@@ -1,9 +1,9 @@
 /**
  * @fileoverview Logging utility for Harvest Notifier
- * 
+ *
  * Provides structured logging with different levels and environment variable control.
  * Supports different log levels: error, warn, info, debug
- * 
+ *
  * @author tiaan.swart@sleeq.global
  * @version 1.0.0
  * @license MIT
@@ -17,7 +17,7 @@ const LOG_LEVELS = {
   ERROR: 0,
   WARN: 1,
   INFO: 2,
-  DEBUG: 3
+  DEBUG: 3,
 };
 
 // Get log level from environment variable, default to INFO
@@ -35,11 +35,11 @@ const getTimestamp = () => {
 const formatMessage = (level, message, data = null) => {
   const timestamp = getTimestamp();
   const baseMessage = `[${timestamp}] [${level}] ${message}`;
-  
+
   if (data !== null) {
     return `${baseMessage} ${JSON.stringify(data, null, 2)}`;
   }
-  
+
   return baseMessage;
 };
 
@@ -145,12 +145,12 @@ class Logger {
     this.info(`User Analysis: ${analysisType}`, {
       totalUsers,
       usersToNotify,
-      usersToNotifyList: usersToNotifyList.map(user => ({
+      usersToNotifyList: usersToNotifyList.map((user) => ({
         id: user.id,
         name: user.first_name + ' ' + user.last_name,
         email: user.email,
-        totalHours: user.totalHours
-      }))
+        totalHours: user.totalHours,
+      })),
     });
   }
 
@@ -163,7 +163,7 @@ class Logger {
   static notificationSent(notificationType, usersNotified, channel) {
     this.info(`Notification Sent: ${notificationType}`, {
       usersNotified,
-      channel
+      channel,
     });
   }
 

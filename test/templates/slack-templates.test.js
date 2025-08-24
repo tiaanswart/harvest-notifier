@@ -1,8 +1,8 @@
 /**
  * @fileoverview Tests for Slack message templates
- * 
+ *
  * Tests the Slack message template functions for daily, weekly, and monthly reminders.
- * 
+ *
  * @author tiaan.swart@sleeq.global
  * @version 1.0.0
  * @license MIT
@@ -13,7 +13,7 @@ import moment from 'moment';
 import {
   createDailyReminderMessage,
   createWeeklyReminderMessage,
-  createMonthlyReminderMessage
+  createMonthlyReminderMessage,
 } from '../../templates/slack-templates.js';
 import Logger from '../../utils/logger.js';
 
@@ -28,7 +28,7 @@ describe('Slack Templates', () => {
       last_name: 'Doe',
       email: 'john@example.com',
       totalHours: 5,
-      slackUser: '<@U123456> (Hours logged: 5)'
+      slackUser: '<@U123456> (Hours logged: 5)',
     },
     {
       id: 2,
@@ -36,8 +36,8 @@ describe('Slack Templates', () => {
       last_name: 'Smith',
       email: 'jane@example.com',
       totalHours: 3,
-      slackUser: '<@U789012> (Hours logged: 3)'
-    }
+      slackUser: '<@U789012> (Hours logged: 3)',
+    },
   ];
 
   beforeEach(() => {
@@ -58,8 +58,8 @@ describe('Slack Templates', () => {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: "*Hi there :sleeq: team! Here's a friendly reminder to complete your timesheets in Harvest. Remember to report your working hours every day to help us keep track of our progress.*"
-        }
+          text: "*Hi there :sleeq: team! Here's a friendly reminder to complete your timesheets in Harvest. Remember to report your working hours every day to help us keep track of our progress.*",
+        },
       });
 
       // Check date info block
@@ -67,8 +67,8 @@ describe('Slack Templates', () => {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: "We noticed that the following people haven't reported their working hours for January 15th 2024:"
-        }
+          text: "We noticed that the following people haven't reported their working hours for January 15th 2024:",
+        },
       });
 
       // Check user list block
@@ -76,8 +76,8 @@ describe('Slack Templates', () => {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: '• <@U123456> (Hours logged: 5)\n• <@U789012> (Hours logged: 3)'
-        }
+          text: '• <@U123456> (Hours logged: 5)\n• <@U789012> (Hours logged: 3)',
+        },
       });
 
       // Check footer block
@@ -85,8 +85,8 @@ describe('Slack Templates', () => {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: 'Please take a moment to report your hours and react with :heavy_check_mark: to confirm that you have completed your timesheet. Thank you for your cooperation!'
-        }
+          text: 'Please take a moment to report your hours and react with :heavy_check_mark: to confirm that you have completed your timesheet. Thank you for your cooperation!',
+        },
       });
 
       // Check action button block
@@ -98,19 +98,19 @@ describe('Slack Templates', () => {
             text: {
               type: 'plain_text',
               text: ':clock5: Report Time',
-              emoji: true
+              emoji: true,
             },
             value: 'report_time',
             url: 'https://harvestapp.com/time',
             action_id: 'button-action',
-            style: 'primary'
-          }
-        ]
+            style: 'primary',
+          },
+        ],
       });
 
       expect(Logger.functionEntry).toHaveBeenCalledWith('createDailyReminderMessage', {
         usersToNotifyCount: 2,
-        timeSheetDateToCheck
+        timeSheetDateToCheck,
       });
     });
 
@@ -126,8 +126,8 @@ describe('Slack Templates', () => {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: '• '
-        }
+          text: '• ',
+        },
       });
     });
 
@@ -140,8 +140,8 @@ describe('Slack Templates', () => {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: '• <@U123456> (Hours logged: 5)'
-        }
+          text: '• <@U123456> (Hours logged: 5)',
+        },
       });
     });
 
@@ -153,8 +153,8 @@ describe('Slack Templates', () => {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: "We noticed that the following people haven't reported their working hours for December 25th 2024:"
-        }
+          text: "We noticed that the following people haven't reported their working hours for December 25th 2024:",
+        },
       });
     });
 
@@ -166,8 +166,8 @@ describe('Slack Templates', () => {
           last_name: 'Doe',
           email: 'john@example.com',
           totalHours: 5,
-          slackUser: 'John Doe (Hours logged: 5)'
-        }
+          slackUser: 'John Doe (Hours logged: 5)',
+        },
       ];
       const timeSheetDateToCheck = '2024-01-15';
       const result = createDailyReminderMessage(usersWithoutSlack, timeSheetDateToCheck);
@@ -176,8 +176,8 @@ describe('Slack Templates', () => {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: '• John Doe (Hours logged: 5)'
-        }
+          text: '• John Doe (Hours logged: 5)',
+        },
       });
     });
 
@@ -187,10 +187,10 @@ describe('Slack Templates', () => {
 
       expect(Logger.functionEntry).toHaveBeenCalledWith('createDailyReminderMessage', {
         usersToNotifyCount: 2,
-        timeSheetDateToCheck
+        timeSheetDateToCheck,
       });
       expect(Logger.functionExit).toHaveBeenCalledWith('createDailyReminderMessage', {
-        blocksCount: 5
+        blocksCount: 5,
       });
     });
   });
@@ -199,7 +199,11 @@ describe('Slack Templates', () => {
     test('should create weekly reminder message with users', () => {
       const timeSheetDateToCheckFrom = '2024-01-08';
       const timeSheetDateToCheckTo = '2024-01-12';
-      const result = createWeeklyReminderMessage(mockUsersToNotify, timeSheetDateToCheckFrom, timeSheetDateToCheckTo);
+      const result = createWeeklyReminderMessage(
+        mockUsersToNotify,
+        timeSheetDateToCheckFrom,
+        timeSheetDateToCheckTo
+      );
 
       expect(result).toBeInstanceOf(Array);
       expect(result).toHaveLength(5);
@@ -209,8 +213,8 @@ describe('Slack Templates', () => {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: "*Hi there :sleeq: team! Here's a friendly reminder to complete your timesheets in Harvest. Remember to report your working hours every day to help us keep track of our progress.*"
-        }
+          text: "*Hi there :sleeq: team! Here's a friendly reminder to complete your timesheets in Harvest. Remember to report your working hours every day to help us keep track of our progress.*",
+        },
       });
 
       // Check date info block
@@ -218,8 +222,8 @@ describe('Slack Templates', () => {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: "We noticed that the following people haven't reported all their working hours between January 8th 2024 and January 12th 2024:"
-        }
+          text: "We noticed that the following people haven't reported all their working hours between January 8th 2024 and January 12th 2024:",
+        },
       });
 
       // Check user list block
@@ -227,8 +231,8 @@ describe('Slack Templates', () => {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: '• <@U123456> (Hours logged: 5)\n• <@U789012> (Hours logged: 3)'
-        }
+          text: '• <@U123456> (Hours logged: 5)\n• <@U789012> (Hours logged: 3)',
+        },
       });
 
       // Check footer and action button blocks should be the same as daily
@@ -236,8 +240,8 @@ describe('Slack Templates', () => {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: 'Please take a moment to report your hours and react with :heavy_check_mark: to confirm that you have completed your timesheet. Thank you for your cooperation!'
-        }
+          text: 'Please take a moment to report your hours and react with :heavy_check_mark: to confirm that you have completed your timesheet. Thank you for your cooperation!',
+        },
       });
 
       expect(result[4]).toEqual({
@@ -248,63 +252,75 @@ describe('Slack Templates', () => {
             text: {
               type: 'plain_text',
               text: ':clock5: Report Time',
-              emoji: true
+              emoji: true,
             },
             value: 'report_time',
             url: 'https://harvestapp.com/time',
             action_id: 'button-action',
-            style: 'primary'
-          }
-        ]
+            style: 'primary',
+          },
+        ],
       });
 
       expect(Logger.functionEntry).toHaveBeenCalledWith('createWeeklyReminderMessage', {
         usersToNotifyCount: 2,
         timeSheetDateToCheckFrom,
-        timeSheetDateToCheckTo
+        timeSheetDateToCheckTo,
       });
     });
 
     test('should handle different date ranges', () => {
       const timeSheetDateToCheckFrom = '2024-12-23';
       const timeSheetDateToCheckTo = '2024-12-29';
-      const result = createWeeklyReminderMessage(mockUsersToNotify, timeSheetDateToCheckFrom, timeSheetDateToCheckTo);
+      const result = createWeeklyReminderMessage(
+        mockUsersToNotify,
+        timeSheetDateToCheckFrom,
+        timeSheetDateToCheckTo
+      );
 
       expect(result[1]).toEqual({
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: "We noticed that the following people haven't reported all their working hours between December 23rd 2024 and December 29th 2024:"
-        }
+          text: "We noticed that the following people haven't reported all their working hours between December 23rd 2024 and December 29th 2024:",
+        },
       });
     });
 
     test('should handle empty users array', () => {
       const timeSheetDateToCheckFrom = '2024-01-08';
       const timeSheetDateToCheckTo = '2024-01-12';
-      const result = createWeeklyReminderMessage([], timeSheetDateToCheckFrom, timeSheetDateToCheckTo);
+      const result = createWeeklyReminderMessage(
+        [],
+        timeSheetDateToCheckFrom,
+        timeSheetDateToCheckTo
+      );
 
       expect(result[2]).toEqual({
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: '• '
-        }
+          text: '• ',
+        },
       });
     });
 
     test('should log function entry and exit', () => {
       const timeSheetDateToCheckFrom = '2024-01-08';
       const timeSheetDateToCheckTo = '2024-01-12';
-      createWeeklyReminderMessage(mockUsersToNotify, timeSheetDateToCheckFrom, timeSheetDateToCheckTo);
+      createWeeklyReminderMessage(
+        mockUsersToNotify,
+        timeSheetDateToCheckFrom,
+        timeSheetDateToCheckTo
+      );
 
       expect(Logger.functionEntry).toHaveBeenCalledWith('createWeeklyReminderMessage', {
         usersToNotifyCount: 2,
         timeSheetDateToCheckFrom,
-        timeSheetDateToCheckTo
+        timeSheetDateToCheckTo,
       });
       expect(Logger.functionExit).toHaveBeenCalledWith('createWeeklyReminderMessage', {
-        blocksCount: 5
+        blocksCount: 5,
       });
     });
   });
@@ -313,7 +329,11 @@ describe('Slack Templates', () => {
     test('should create monthly reminder message with users', () => {
       const timeSheetDateToCheckFrom = '2024-01-01';
       const timeSheetDateToCheckTo = '2024-01-31';
-      const result = createMonthlyReminderMessage(mockUsersToNotify, timeSheetDateToCheckFrom, timeSheetDateToCheckTo);
+      const result = createMonthlyReminderMessage(
+        mockUsersToNotify,
+        timeSheetDateToCheckFrom,
+        timeSheetDateToCheckTo
+      );
 
       expect(result).toBeInstanceOf(Array);
       expect(result).toHaveLength(5);
@@ -323,8 +343,8 @@ describe('Slack Templates', () => {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: "*Hi there :sleeq: team! Here's a friendly reminder to complete your timesheets in Harvest. Remember to report your working hours every day to help us keep track of our progress.*"
-        }
+          text: "*Hi there :sleeq: team! Here's a friendly reminder to complete your timesheets in Harvest. Remember to report your working hours every day to help us keep track of our progress.*",
+        },
       });
 
       // Check date info block
@@ -332,8 +352,8 @@ describe('Slack Templates', () => {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: "We noticed that the following people haven't reported all their working hours between January 1st 2024 and January 31st 2024:"
-        }
+          text: "We noticed that the following people haven't reported all their working hours between January 1st 2024 and January 31st 2024:",
+        },
       });
 
       // Check user list block
@@ -341,8 +361,8 @@ describe('Slack Templates', () => {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: '• <@U123456> (Hours logged: 5)\n• <@U789012> (Hours logged: 3)'
-        }
+          text: '• <@U123456> (Hours logged: 5)\n• <@U789012> (Hours logged: 3)',
+        },
       });
 
       // Check footer and action button blocks should be the same as daily/weekly
@@ -350,8 +370,8 @@ describe('Slack Templates', () => {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: 'Please take a moment to report your hours and react with :heavy_check_mark: to confirm that you have completed your timesheet. Thank you for your cooperation!'
-        }
+          text: 'Please take a moment to report your hours and react with :heavy_check_mark: to confirm that you have completed your timesheet. Thank you for your cooperation!',
+        },
       });
 
       expect(result[4]).toEqual({
@@ -362,63 +382,75 @@ describe('Slack Templates', () => {
             text: {
               type: 'plain_text',
               text: ':clock5: Report Time',
-              emoji: true
+              emoji: true,
             },
             value: 'report_time',
             url: 'https://harvestapp.com/time',
             action_id: 'button-action',
-            style: 'primary'
-          }
-        ]
+            style: 'primary',
+          },
+        ],
       });
 
       expect(Logger.functionEntry).toHaveBeenCalledWith('createMonthlyReminderMessage', {
         usersToNotifyCount: 2,
         timeSheetDateToCheckFrom,
-        timeSheetDateToCheckTo
+        timeSheetDateToCheckTo,
       });
     });
 
     test('should handle different month ranges', () => {
       const timeSheetDateToCheckFrom = '2024-12-01';
       const timeSheetDateToCheckTo = '2024-12-31';
-      const result = createMonthlyReminderMessage(mockUsersToNotify, timeSheetDateToCheckFrom, timeSheetDateToCheckTo);
+      const result = createMonthlyReminderMessage(
+        mockUsersToNotify,
+        timeSheetDateToCheckFrom,
+        timeSheetDateToCheckTo
+      );
 
       expect(result[1]).toEqual({
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: "We noticed that the following people haven't reported all their working hours between December 1st 2024 and December 31st 2024:"
-        }
+          text: "We noticed that the following people haven't reported all their working hours between December 1st 2024 and December 31st 2024:",
+        },
       });
     });
 
     test('should handle empty users array', () => {
       const timeSheetDateToCheckFrom = '2024-01-01';
       const timeSheetDateToCheckTo = '2024-01-31';
-      const result = createMonthlyReminderMessage([], timeSheetDateToCheckFrom, timeSheetDateToCheckTo);
+      const result = createMonthlyReminderMessage(
+        [],
+        timeSheetDateToCheckFrom,
+        timeSheetDateToCheckTo
+      );
 
       expect(result[2]).toEqual({
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: '• '
-        }
+          text: '• ',
+        },
       });
     });
 
     test('should log function entry and exit', () => {
       const timeSheetDateToCheckFrom = '2024-01-01';
       const timeSheetDateToCheckTo = '2024-01-31';
-      createMonthlyReminderMessage(mockUsersToNotify, timeSheetDateToCheckFrom, timeSheetDateToCheckTo);
+      createMonthlyReminderMessage(
+        mockUsersToNotify,
+        timeSheetDateToCheckFrom,
+        timeSheetDateToCheckTo
+      );
 
       expect(Logger.functionEntry).toHaveBeenCalledWith('createMonthlyReminderMessage', {
         usersToNotifyCount: 2,
         timeSheetDateToCheckFrom,
-        timeSheetDateToCheckTo
+        timeSheetDateToCheckTo,
       });
       expect(Logger.functionExit).toHaveBeenCalledWith('createMonthlyReminderMessage', {
-        blocksCount: 5
+        blocksCount: 5,
       });
     });
   });
@@ -430,8 +462,16 @@ describe('Slack Templates', () => {
       const timeSheetDateToCheckTo = '2024-01-12';
 
       const dailyResult = createDailyReminderMessage(mockUsersToNotify, timeSheetDateToCheck);
-      const weeklyResult = createWeeklyReminderMessage(mockUsersToNotify, timeSheetDateToCheckFrom, timeSheetDateToCheckTo);
-      const monthlyResult = createMonthlyReminderMessage(mockUsersToNotify, timeSheetDateToCheckFrom, timeSheetDateToCheckTo);
+      const weeklyResult = createWeeklyReminderMessage(
+        mockUsersToNotify,
+        timeSheetDateToCheckFrom,
+        timeSheetDateToCheckTo
+      );
+      const monthlyResult = createMonthlyReminderMessage(
+        mockUsersToNotify,
+        timeSheetDateToCheckFrom,
+        timeSheetDateToCheckTo
+      );
 
       // All templates should have the same number of blocks
       expect(dailyResult).toHaveLength(5);
@@ -461,20 +501,28 @@ describe('Slack Templates', () => {
       const timeSheetDateToCheckTo = '2024-01-12';
 
       const dailyResult = createDailyReminderMessage(mockUsersToNotify, timeSheetDateToCheck);
-      const weeklyResult = createWeeklyReminderMessage(mockUsersToNotify, timeSheetDateToCheckFrom, timeSheetDateToCheckTo);
+      const weeklyResult = createWeeklyReminderMessage(
+        mockUsersToNotify,
+        timeSheetDateToCheckFrom,
+        timeSheetDateToCheckTo
+      );
 
       // Daily should mention single date
-      expect(dailyResult[1].text.text).toContain("haven't reported their working hours for January 15th 2024");
+      expect(dailyResult[1].text.text).toContain(
+        "haven't reported their working hours for January 15th 2024"
+      );
 
       // Weekly should mention date range
-      expect(weeklyResult[1].text.text).toContain("haven't reported all their working hours between January 8th 2024 and January 12th 2024");
+      expect(weeklyResult[1].text.text).toContain(
+        "haven't reported all their working hours between January 8th 2024 and January 12th 2024"
+      );
     });
   });
 
   describe('Edge Cases', () => {
     test('should handle null or undefined users', () => {
       const timeSheetDateToCheck = '2024-01-15';
-      
+
       // These should not throw but handle gracefully
       expect(() => createDailyReminderMessage(null, timeSheetDateToCheck)).not.toThrow();
       expect(() => createDailyReminderMessage(undefined, timeSheetDateToCheck)).not.toThrow();
@@ -497,7 +545,7 @@ describe('Slack Templates', () => {
           id: 1,
           first_name: 'John',
           // Missing last_name, email, totalHours, slackUser
-        }
+        },
       ];
       const timeSheetDateToCheck = '2024-01-15';
 

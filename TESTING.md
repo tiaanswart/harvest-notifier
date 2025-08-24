@@ -31,12 +31,14 @@ test/
 Unit tests focus on testing individual functions and modules in isolation.
 
 **Files:**
+
 - `test/utils/logger.test.js`
 - `test/utils/harvest-api.test.js`
 - `test/utils/slack-api.test.js`
 - `test/templates/slack-templates.test.js`
 
 **Coverage:**
+
 - Function input/output validation
 - Error handling
 - Edge cases
@@ -48,10 +50,12 @@ Unit tests focus on testing individual functions and modules in isolation.
 Integration tests verify that different modules work together correctly.
 
 **Files:**
+
 - `test/integration.test.js`
 - `test/daily.test.js`
 
 **Coverage:**
+
 - Complete workflow testing
 - Module interaction
 - Data flow between components
@@ -63,6 +67,7 @@ Integration tests verify that different modules work together correctly.
 E2E tests simulate real-world usage scenarios.
 
 **Coverage:**
+
 - Full daily notification workflow
 - API integration (mocked)
 - Slack message generation
@@ -74,12 +79,14 @@ E2E tests simulate real-world usage scenarios.
 ### Mocking Strategy
 
 External dependencies are mocked to ensure:
+
 - **Reliability**: Tests don't depend on external services
 - **Speed**: No network calls during testing
 - **Isolation**: Tests can run independently
 - **Predictability**: Consistent test results
 
 **Mocked Dependencies:**
+
 - `node-fetch` - HTTP requests
 - `moment` - Date/time operations (where needed)
 - External APIs (Harvest, Slack)
@@ -95,7 +102,7 @@ const mockHarvestUsers = [
     first_name: 'John',
     last_name: 'Doe',
     email: 'john@example.com',
-    is_active: true
+    is_active: true,
   },
   // ... more users
 ];
@@ -104,7 +111,7 @@ const mockTimeReports = [
   {
     user_id: 1,
     total_hours: 5.5,
-    date: '2024-01-15'
+    date: '2024-01-15',
   },
   // ... more reports
 ];
@@ -130,6 +137,7 @@ beforeEach(() => {
 ### Prerequisites
 
 Install dependencies:
+
 ```bash
 npm install
 ```
@@ -137,16 +145,19 @@ npm install
 ### Basic Test Commands
 
 **Run all tests:**
+
 ```bash
 npm test
 ```
 
 **Run tests in watch mode:**
+
 ```bash
 npm run test:watch
 ```
 
 **Run tests with coverage:**
+
 ```bash
 npm run test:coverage
 ```
@@ -156,21 +167,25 @@ npm run test:coverage
 ### Advanced Test Commands
 
 **Run specific test file:**
+
 ```bash
 npx jest test/utils/logger.test.js
 ```
 
 **Run tests matching a pattern:**
+
 ```bash
 npx jest --testNamePattern="should log error messages"
 ```
 
 **Run tests with verbose output:**
+
 ```bash
 npx jest --verbose
 ```
 
 **Run tests in parallel:**
+
 ```bash
 npx jest --maxWorkers=4
 ```
@@ -187,6 +202,7 @@ The test suite aims for high coverage across:
 ### Coverage Reports
 
 After running `npm run test:coverage`, coverage reports are available in:
+
 - **Console**: Summary in terminal output
 - **HTML**: Detailed report in `coverage/lcov-report/index.html`
 - **LCOV**: Machine-readable format in `coverage/lcov.info`
@@ -202,10 +218,10 @@ test('should filter active users', async () => {
   // Arrange
   const mockResponse = { users: [...] };
   fetch.mockResolvedValue(mockResponse);
-  
+
   // Act
   const result = await getHarvestUsers(accountId, token);
-  
+
   // Assert
   expect(result).toHaveLength(2);
   expect(result[0].is_active).toBe(true);
@@ -254,9 +270,8 @@ Tests cover various error conditions:
 ```javascript
 test('should handle API error', async () => {
   fetch.mockRejectedValue(new Error('API Error'));
-  
-  await expect(getHarvestUsers(accountId, token))
-    .rejects.toThrow('API Error');
+
+  await expect(getHarvestUsers(accountId, token)).rejects.toThrow('API Error');
 });
 ```
 
@@ -268,7 +283,7 @@ Tests handle boundary conditions:
 test('should handle empty users array', async () => {
   const mockResponse = { users: [] };
   fetch.mockResolvedValue(mockResponse);
-  
+
   const result = await getHarvestUsers(accountId, token);
   expect(result).toHaveLength(0);
 });
@@ -377,16 +392,19 @@ npx jest --testNamePattern="specific test name" --verbose
 ### Common Issues
 
 **Tests Failing Intermittently:**
+
 - Check for shared state between tests
 - Ensure proper cleanup in afterEach hooks
 - Verify mock resets
 
 **Slow Test Execution:**
+
 - Check for unnecessary network calls
 - Ensure all external dependencies are mocked
 - Consider running tests in parallel
 
 **Coverage Issues:**
+
 - Add tests for uncovered code paths
 - Check for conditional logic that's not tested
 - Verify error handling scenarios

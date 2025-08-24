@@ -1,9 +1,9 @@
 /**
  * @fileoverview Tests for daily notification module
- * 
+ *
  * Tests the daily timesheet notification functionality including date logic,
  * user analysis, and Slack notifications.
- * 
+ *
  * @author tiaan.swart@sleeq.global
  * @version 1.0.0
  * @license MIT
@@ -33,28 +33,28 @@ describe('Daily Notification Module', () => {
       first_name: 'John',
       last_name: 'Doe',
       email: 'john@example.com',
-      is_active: true
+      is_active: true,
     },
     {
       id: 2,
       first_name: 'Jane',
       last_name: 'Smith',
       email: 'jane@example.com',
-      is_active: true
-    }
+      is_active: true,
+    },
   ];
 
   const mockTimeReports = [
     {
       user_id: 1,
       total_hours: 5.5,
-      date: '2024-01-15'
+      date: '2024-01-15',
     },
     {
       user_id: 2,
       total_hours: 2.0,
-      date: '2024-01-15'
-    }
+      date: '2024-01-15',
+    },
   ];
 
   const mockSlackUsers = [
@@ -63,17 +63,17 @@ describe('Daily Notification Module', () => {
       profile: {
         real_name_normalized: 'John Doe',
         display_name_normalized: 'John',
-        email: 'john@example.com'
-      }
+        email: 'john@example.com',
+      },
     },
     {
       id: 'U789012',
       profile: {
         real_name_normalized: 'Jane Smith',
         display_name_normalized: 'Jane',
-        email: 'jane@example.com'
-      }
-    }
+        email: 'jane@example.com',
+      },
+    },
   ];
 
   const mockSlackBlocks = [
@@ -81,15 +81,15 @@ describe('Daily Notification Module', () => {
       type: 'section',
       text: {
         type: 'mrkdwn',
-        text: 'Test message'
-      }
-    }
+        text: 'Test message',
+      },
+    },
   ];
 
   beforeEach(() => {
     // Clear all mocks
     vi.clearAllMocks();
-    
+
     // Reset environment variables
     process.env.HARVEST_ACCOUNT_ID = 'test-account-id';
     process.env.HARVEST_TOKEN = 'test-harvest-token';
@@ -113,11 +113,11 @@ describe('Daily Notification Module', () => {
       expect(result).toHaveLength(2);
       expect(result[0]).toMatchObject({
         id: 1,
-        totalHours: 5.5
+        totalHours: 5.5,
       });
       expect(result[1]).toMatchObject({
         id: 2,
-        totalHours: 2.0
+        totalHours: 2.0,
       });
     });
 
@@ -128,16 +128,16 @@ describe('Daily Notification Module', () => {
           first_name: 'John',
           last_name: 'Doe',
           email: 'john@example.com',
-          is_active: true
-        }
+          is_active: true,
+        },
       ];
 
       const timeReportsWithSufficientHours = [
         {
           user_id: 1,
           total_hours: 8.5,
-          date: '2024-01-15'
-        }
+          date: '2024-01-15',
+        },
       ];
 
       getHarvestUsers.mockResolvedValue(usersWithSufficientHours);
@@ -176,8 +176,8 @@ describe('Daily Notification Module', () => {
           first_name: 'John',
           last_name: 'Doe',
           email: 'john@example.com',
-          totalHours: 5.5
-        }
+          totalHours: 5.5,
+        },
       ];
 
       await slackNotify(usersToNotify, '2024-01-15');
@@ -185,7 +185,11 @@ describe('Daily Notification Module', () => {
       expect(getSlackUsers).toHaveBeenCalledWith('test-slack-token');
       expect(matchUsersWithSlack).toHaveBeenCalledWith(usersToNotify, mockSlackUsers);
       expect(createDailyReminderMessage).toHaveBeenCalled();
-      expect(sendSlackMessage).toHaveBeenCalledWith('#general', mockSlackBlocks, 'test-slack-token');
+      expect(sendSlackMessage).toHaveBeenCalledWith(
+        '#general',
+        mockSlackBlocks,
+        'test-slack-token'
+      );
     });
 
     test('should not send notifications when no users need to be notified', async () => {
@@ -204,8 +208,8 @@ describe('Daily Notification Module', () => {
           first_name: 'John',
           last_name: 'Doe',
           email: 'john@example.com',
-          totalHours: 5.5
-        }
+          totalHours: 5.5,
+        },
       ];
 
       await expect(slackNotify(usersToNotify, '2024-01-15')).rejects.toThrow('Slack API Error');
@@ -336,7 +340,7 @@ describe('Daily Notification Module', () => {
 
       expect(Logger.appStart).toHaveBeenCalledWith('daily', {
         currentDate: expect.any(String),
-        weekday: expect.any(String)
+        weekday: expect.any(String),
       });
 
       expect(Logger.appEnd).toHaveBeenCalledWith('daily', expect.any(String));
@@ -378,17 +382,13 @@ describe('Daily Notification Module', () => {
           first_name: 'John',
           last_name: 'Doe',
           email: 'john@example.com',
-          totalHours: 5.5
-        }
+          totalHours: 5.5,
+        },
       ];
 
       await slackNotify(usersToNotify, '2024-01-15');
 
-      expect(Logger.notificationSent).toHaveBeenCalledWith(
-        'daily',
-        expect.any(Number),
-        '#general'
-      );
+      expect(Logger.notificationSent).toHaveBeenCalledWith('daily', expect.any(Number), '#general');
     });
   });
 

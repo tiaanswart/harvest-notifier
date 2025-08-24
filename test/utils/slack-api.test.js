@@ -1,8 +1,8 @@
 /**
  * @fileoverview Tests for Slack API utilities
- * 
+ *
  * Tests the Slack API functions including user retrieval, message sending, and user matching.
- * 
+ *
  * @author tiaan.swart@sleeq.global
  * @version 1.0.0
  * @license MIT
@@ -38,10 +38,10 @@ describe('Slack API', () => {
               profile: {
                 real_name_normalized: 'John Doe',
                 display_name_normalized: 'John',
-                email: 'john@example.com'
+                email: 'john@example.com',
               },
               deleted: false,
-              is_bot: false
+              is_bot: false,
             },
             {
               id: 'U789012',
@@ -49,10 +49,10 @@ describe('Slack API', () => {
               profile: {
                 real_name_normalized: 'Jane Smith',
                 display_name_normalized: 'Jane',
-                email: 'jane@example.com'
+                email: 'jane@example.com',
               },
               deleted: false,
-              is_bot: false
+              is_bot: false,
             },
             {
               id: 'U345678',
@@ -60,10 +60,10 @@ describe('Slack API', () => {
               profile: {
                 real_name_normalized: 'Deleted User',
                 display_name_normalized: 'Deleted',
-                email: 'deleted@example.com'
+                email: 'deleted@example.com',
               },
               deleted: true,
-              is_bot: false
+              is_bot: false,
             },
             {
               id: 'B123456',
@@ -71,13 +71,13 @@ describe('Slack API', () => {
               profile: {
                 real_name_normalized: 'Slackbot',
                 display_name_normalized: 'Slackbot',
-                email: 'slackbot@example.com'
+                email: 'slackbot@example.com',
               },
               deleted: false,
-              is_bot: true
-            }
-          ]
-        })
+              is_bot: true,
+            },
+          ],
+        }),
       };
 
       fetch.mockResolvedValue(mockResponse);
@@ -102,8 +102,8 @@ describe('Slack API', () => {
       const mockResponse = {
         json: vi.fn().mockResolvedValue({
           ok: true,
-          members: []
-        })
+          members: [],
+        }),
       };
 
       fetch.mockResolvedValue(mockResponse);
@@ -116,8 +116,8 @@ describe('Slack API', () => {
     test('should handle missing members property', async () => {
       const mockResponse = {
         json: vi.fn().mockResolvedValue({
-          ok: true
-        })
+          ok: true,
+        }),
       };
 
       fetch.mockResolvedValue(mockResponse);
@@ -131,8 +131,8 @@ describe('Slack API', () => {
       const mockResponse = {
         json: vi.fn().mockResolvedValue({
           ok: false,
-          error: 'invalid_auth'
-        })
+          error: 'invalid_auth',
+        }),
       };
 
       fetch.mockResolvedValue(mockResponse);
@@ -142,7 +142,7 @@ describe('Slack API', () => {
       expect(result).toHaveLength(0);
       expect(Logger.apiResponse).toHaveBeenCalledWith('Slack', undefined, {
         membersCount: 0,
-        ok: false
+        ok: false,
       });
     });
 
@@ -162,13 +162,13 @@ describe('Slack API', () => {
               profile: {
                 real_name_normalized: 'John Doe',
                 display_name_normalized: 'John',
-                email: 'john@example.com'
+                email: 'john@example.com',
               },
               deleted: false,
-              is_bot: false
-            }
-          ]
-        })
+              is_bot: false,
+            },
+          ],
+        }),
       };
 
       fetch.mockResolvedValue(mockResponse);
@@ -178,7 +178,7 @@ describe('Slack API', () => {
       expect(Logger.apiRequest).toHaveBeenCalledWith('Slack', 'GET /api/users.list');
       expect(Logger.apiResponse).toHaveBeenCalledWith('Slack', undefined, {
         membersCount: 1,
-        ok: true
+        ok: true,
       });
     });
   });
@@ -190,17 +190,17 @@ describe('Slack API', () => {
           type: 'section',
           text: {
             type: 'mrkdwn',
-            text: 'Test message'
-          }
-        }
+            text: 'Test message',
+          },
+        },
       ];
 
       const mockResponse = {
         json: vi.fn().mockResolvedValue({
           ok: true,
           ts: '1234567890.123456',
-          channel: mockChannel
-        })
+          channel: mockChannel,
+        }),
       };
 
       fetch.mockResolvedValue(mockResponse);
@@ -224,7 +224,7 @@ describe('Slack API', () => {
       expect(result.ts).toBe('1234567890.123456');
       expect(Logger.functionEntry).toHaveBeenCalledWith('sendSlackMessage', {
         channel: mockChannel,
-        blocksCount: 1
+        blocksCount: 1,
       });
     });
 
@@ -234,16 +234,16 @@ describe('Slack API', () => {
           type: 'section',
           text: {
             type: 'mrkdwn',
-            text: 'Test message'
-          }
-        }
+            text: 'Test message',
+          },
+        },
       ];
 
       const mockResponse = {
         json: vi.fn().mockResolvedValue({
           ok: false,
-          error: 'channel_not_found'
-        })
+          error: 'channel_not_found',
+        }),
       };
 
       fetch.mockResolvedValue(mockResponse);
@@ -259,8 +259,8 @@ describe('Slack API', () => {
         json: vi.fn().mockResolvedValue({
           ok: true,
           ts: '1234567890.123456',
-          channel: mockChannel
-        })
+          channel: mockChannel,
+        }),
       };
 
       fetch.mockResolvedValue(mockResponse);
@@ -269,7 +269,7 @@ describe('Slack API', () => {
 
       expect(Logger.functionEntry).toHaveBeenCalledWith('sendSlackMessage', {
         channel: mockChannel,
-        blocksCount: 0
+        blocksCount: 0,
       });
     });
 
@@ -279,15 +279,16 @@ describe('Slack API', () => {
           type: 'section',
           text: {
             type: 'mrkdwn',
-            text: 'Test message'
-          }
-        }
+            text: 'Test message',
+          },
+        },
       ];
 
       fetch.mockRejectedValue(new Error('Network Error'));
 
-      await expect(sendSlackMessage(mockChannel, mockBlocks, mockToken))
-        .rejects.toThrow('Network Error');
+      await expect(sendSlackMessage(mockChannel, mockBlocks, mockToken)).rejects.toThrow(
+        'Network Error'
+      );
     });
 
     test('should log API request and response', async () => {
@@ -296,17 +297,17 @@ describe('Slack API', () => {
           type: 'section',
           text: {
             type: 'mrkdwn',
-            text: 'Test message'
-          }
-        }
+            text: 'Test message',
+          },
+        },
       ];
 
       const mockResponse = {
         json: vi.fn().mockResolvedValue({
           ok: true,
           ts: '1234567890.123456',
-          channel: mockChannel
-        })
+          channel: mockChannel,
+        }),
       };
 
       fetch.mockResolvedValue(mockResponse);
@@ -314,12 +315,12 @@ describe('Slack API', () => {
       await sendSlackMessage(mockChannel, mockBlocks, mockToken);
 
       expect(Logger.apiRequest).toHaveBeenCalledWith('Slack', 'POST /api/chat.postMessage', {
-        channel: mockChannel
+        channel: mockChannel,
       });
       expect(Logger.apiResponse).toHaveBeenCalledWith('Slack', undefined, {
         ok: true,
         ts: '1234567890.123456',
-        channel: mockChannel
+        channel: mockChannel,
       });
     });
 
@@ -329,27 +330,24 @@ describe('Slack API', () => {
           type: 'section',
           text: {
             type: 'mrkdwn',
-            text: 'Message with special chars: & < > " \''
-          }
-        }
+            text: 'Message with special chars: & < > " \'',
+          },
+        },
       ];
 
       const mockResponse = {
         json: vi.fn().mockResolvedValue({
           ok: true,
           ts: '1234567890.123456',
-          channel: mockChannel
-        })
+          channel: mockChannel,
+        }),
       };
 
       fetch.mockResolvedValue(mockResponse);
 
       await sendSlackMessage(mockChannel, mockBlocks, mockToken);
 
-      expect(fetch).toHaveBeenCalledWith(
-        expect.stringContaining('blocks='),
-        expect.any(Object)
-      );
+      expect(fetch).toHaveBeenCalledWith(expect.stringContaining('blocks='), expect.any(Object));
     });
   });
 
@@ -361,8 +359,8 @@ describe('Slack API', () => {
           first_name: 'John',
           last_name: 'Doe',
           email: 'john@example.com',
-          totalHours: 5
-        }
+          totalHours: 5,
+        },
       ];
 
       const slackUsers = [
@@ -371,9 +369,9 @@ describe('Slack API', () => {
           profile: {
             real_name_normalized: 'John Doe',
             display_name_normalized: 'John',
-            email: 'john@example.com'
-          }
-        }
+            email: 'john@example.com',
+          },
+        },
       ];
 
       const result = matchUsersWithSlack(usersToNotify, slackUsers);
@@ -382,7 +380,7 @@ describe('Slack API', () => {
       expect(result[0].slackUser).toBe('<@U123456> (Hours logged: 5)');
       expect(Logger.functionEntry).toHaveBeenCalledWith('matchUsersWithSlack', {
         usersToNotifyCount: 1,
-        slackUsersCount: 1
+        slackUsersCount: 1,
       });
     });
 
@@ -393,8 +391,8 @@ describe('Slack API', () => {
           first_name: 'John',
           last_name: 'Doe',
           email: 'john@example.com',
-          totalHours: 5
-        }
+          totalHours: 5,
+        },
       ];
 
       const slackUsers = [
@@ -403,9 +401,9 @@ describe('Slack API', () => {
           profile: {
             real_name_normalized: 'Jane Smith',
             display_name_normalized: 'John Doe',
-            email: 'jane@example.com'
-          }
-        }
+            email: 'jane@example.com',
+          },
+        },
       ];
 
       const result = matchUsersWithSlack(usersToNotify, slackUsers);
@@ -421,8 +419,8 @@ describe('Slack API', () => {
           first_name: 'John',
           last_name: 'Doe',
           email: 'john@example.com',
-          totalHours: 5
-        }
+          totalHours: 5,
+        },
       ];
 
       const slackUsers = [
@@ -431,9 +429,9 @@ describe('Slack API', () => {
           profile: {
             real_name_normalized: 'Jane Smith',
             display_name_normalized: 'Jane',
-            email: 'john@example.com'
-          }
-        }
+            email: 'john@example.com',
+          },
+        },
       ];
 
       const result = matchUsersWithSlack(usersToNotify, slackUsers);
@@ -449,8 +447,8 @@ describe('Slack API', () => {
           first_name: 'John',
           last_name: 'Doe',
           email: 'JOHN@EXAMPLE.COM',
-          totalHours: 5
-        }
+          totalHours: 5,
+        },
       ];
 
       const slackUsers = [
@@ -459,9 +457,9 @@ describe('Slack API', () => {
           profile: {
             real_name_normalized: 'JANE SMITH',
             display_name_normalized: 'JANE',
-            email: 'john@example.com'
-          }
-        }
+            email: 'john@example.com',
+          },
+        },
       ];
 
       const result = matchUsersWithSlack(usersToNotify, slackUsers);
@@ -477,8 +475,8 @@ describe('Slack API', () => {
           first_name: 'John',
           last_name: 'Doe',
           email: 'john@example.com',
-          totalHours: 5
-        }
+          totalHours: 5,
+        },
       ];
 
       const slackUsers = [
@@ -487,9 +485,9 @@ describe('Slack API', () => {
           profile: {
             real_name_normalized: 'Jane Smith',
             display_name_normalized: 'Jane',
-            email: 'jane@example.com'
-          }
-        }
+            email: 'jane@example.com',
+          },
+        },
       ];
 
       const result = matchUsersWithSlack(usersToNotify, slackUsers);
@@ -511,8 +509,8 @@ describe('Slack API', () => {
           first_name: 'John',
           last_name: 'Doe',
           email: 'john@example.com',
-          totalHours: 5
-        }
+          totalHours: 5,
+        },
       ];
 
       const slackUsers = [
@@ -520,10 +518,10 @@ describe('Slack API', () => {
           id: 'U123456',
           profile: {
             real_name_normalized: 'Jane Smith',
-            display_name_normalized: 'Jane'
+            display_name_normalized: 'Jane',
             // No email property
-          }
-        }
+          },
+        },
       ];
 
       const result = matchUsersWithSlack(usersToNotify, slackUsers);
@@ -539,22 +537,22 @@ describe('Slack API', () => {
           first_name: 'John',
           last_name: 'Doe',
           email: 'john@example.com',
-          totalHours: 5
+          totalHours: 5,
         },
         {
           id: 2,
           first_name: 'Jane',
           last_name: 'Smith',
           email: 'jane@example.com',
-          totalHours: 8
+          totalHours: 8,
         },
         {
           id: 3,
           first_name: 'Bob',
           last_name: 'Wilson',
           email: 'bob@example.com',
-          totalHours: 3
-        }
+          totalHours: 3,
+        },
       ];
 
       const slackUsers = [
@@ -563,17 +561,17 @@ describe('Slack API', () => {
           profile: {
             real_name_normalized: 'John Doe',
             display_name_normalized: 'John',
-            email: 'john@example.com'
-          }
+            email: 'john@example.com',
+          },
         },
         {
           id: 'U789012',
           profile: {
             real_name_normalized: 'Jane Smith',
             display_name_normalized: 'Jane',
-            email: 'jane@example.com'
-          }
-        }
+            email: 'jane@example.com',
+          },
+        },
         // Bob Wilson not in Slack users
       ];
 
@@ -592,8 +590,8 @@ describe('Slack API', () => {
           first_name: 'John',
           last_name: 'Doe',
           email: 'john@example.com',
-          totalHours: 5
-        }
+          totalHours: 5,
+        },
       ];
 
       const slackUsers = [
@@ -602,9 +600,9 @@ describe('Slack API', () => {
           profile: {
             real_name_normalized: 'John Doe',
             display_name_normalized: 'John',
-            email: 'john@example.com'
-          }
-        }
+            email: 'john@example.com',
+          },
+        },
       ];
 
       matchUsersWithSlack(usersToNotify, slackUsers);
@@ -612,7 +610,7 @@ describe('Slack API', () => {
       expect(Logger.functionExit).toHaveBeenCalledWith('matchUsersWithSlack', {
         totalUsers: 1,
         matchedCount: 1,
-        unmatchedCount: 0
+        unmatchedCount: 0,
       });
     });
   });
@@ -620,7 +618,7 @@ describe('Slack API', () => {
   describe('Error Handling', () => {
     test('should handle malformed JSON response in getSlackUsers', async () => {
       const mockResponse = {
-        json: vi.fn().mockRejectedValue(new SyntaxError('Invalid JSON'))
+        json: vi.fn().mockRejectedValue(new SyntaxError('Invalid JSON')),
       };
 
       fetch.mockResolvedValue(mockResponse);
@@ -634,19 +632,20 @@ describe('Slack API', () => {
           type: 'section',
           text: {
             type: 'mrkdwn',
-            text: 'Test message'
-          }
-        }
+            text: 'Test message',
+          },
+        },
       ];
 
       const mockResponse = {
-        json: vi.fn().mockRejectedValue(new SyntaxError('Invalid JSON'))
+        json: vi.fn().mockRejectedValue(new SyntaxError('Invalid JSON')),
       };
 
       fetch.mockResolvedValue(mockResponse);
 
-      await expect(sendSlackMessage(mockChannel, mockBlocks, mockToken))
-        .rejects.toThrow('Invalid JSON');
+      await expect(sendSlackMessage(mockChannel, mockBlocks, mockToken)).rejects.toThrow(
+        'Invalid JSON'
+      );
     });
   });
 });

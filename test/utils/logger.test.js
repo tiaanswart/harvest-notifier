@@ -1,9 +1,9 @@
 /**
  * @fileoverview Tests for Logger utility
- * 
+ *
  * Tests the logging functionality including different log levels,
  * environment variable control, and structured logging methods.
- * 
+ *
  * @author tiaan.swart@sleeq.global
  * @version 1.0.0
  * @license MIT
@@ -16,7 +16,7 @@ import Logger from '../../utils/logger.js';
 const originalConsole = {
   log: console.log,
   warn: console.warn,
-  error: console.error
+  error: console.error,
 };
 
 describe('Logger', () => {
@@ -25,12 +25,12 @@ describe('Logger', () => {
   beforeEach(() => {
     // Reset environment variables
     delete process.env.LOG_LEVEL;
-    
+
     // Spy on console methods
     consoleSpy = {
       log: vi.spyOn(console, 'log').mockImplementation(() => {}),
       warn: vi.spyOn(console, 'warn').mockImplementation(() => {}),
-      error: vi.spyOn(console, 'error').mockImplementation(() => {})
+      error: vi.spyOn(console, 'error').mockImplementation(() => {}),
     };
   });
 
@@ -115,22 +115,14 @@ describe('Logger', () => {
     test('should format messages with data', () => {
       const testData = { key: 'value', number: 123 };
       Logger.info('Test message', testData);
-      expect(consoleSpy.log).toHaveBeenCalledWith(
-        expect.stringContaining('Test message')
-      );
-      expect(consoleSpy.log).toHaveBeenCalledWith(
-        expect.stringContaining('"key": "value"')
-      );
-      expect(consoleSpy.log).toHaveBeenCalledWith(
-        expect.stringContaining('"number": 123')
-      );
+      expect(consoleSpy.log).toHaveBeenCalledWith(expect.stringContaining('Test message'));
+      expect(consoleSpy.log).toHaveBeenCalledWith(expect.stringContaining('"key": "value"'));
+      expect(consoleSpy.log).toHaveBeenCalledWith(expect.stringContaining('"number": 123'));
     });
 
     test('should handle null data gracefully', () => {
       Logger.info('Test message', null);
-      expect(consoleSpy.log).toHaveBeenCalledWith(
-        expect.stringContaining('[INFO] Test message')
-      );
+      expect(consoleSpy.log).toHaveBeenCalledWith(expect.stringContaining('[INFO] Test message'));
     });
   });
 
@@ -147,12 +139,8 @@ describe('Logger', () => {
       process.env.LOG_LEVEL = 'DEBUG';
       const params = { id: 123, name: 'test' };
       Logger.functionEntry('testFunction', params);
-      expect(consoleSpy.log).toHaveBeenCalledWith(
-        expect.stringContaining('"id": 123')
-      );
-      expect(consoleSpy.log).toHaveBeenCalledWith(
-        expect.stringContaining('"name": "test"')
-      );
+      expect(consoleSpy.log).toHaveBeenCalledWith(expect.stringContaining('"id": 123'));
+      expect(consoleSpy.log).toHaveBeenCalledWith(expect.stringContaining('"name": "test"'));
     });
 
     test('functionExit should log debug message with function name', () => {
@@ -167,19 +155,13 @@ describe('Logger', () => {
       process.env.LOG_LEVEL = 'DEBUG';
       const result = { success: true, data: 'test' };
       Logger.functionExit('testFunction', result);
-      expect(consoleSpy.log).toHaveBeenCalledWith(
-        expect.stringContaining('"success": true')
-      );
-      expect(consoleSpy.log).toHaveBeenCalledWith(
-        expect.stringContaining('"data": "test"')
-      );
+      expect(consoleSpy.log).toHaveBeenCalledWith(expect.stringContaining('"success": true'));
+      expect(consoleSpy.log).toHaveBeenCalledWith(expect.stringContaining('"data": "test"'));
     });
 
     test('apiRequest should log info message with API details', () => {
       Logger.apiRequest('Harvest', 'GET /v2/users', { accountId: '123' });
-      expect(consoleSpy.log).toHaveBeenCalledWith(
-        expect.stringContaining('API Request: Harvest')
-      );
+      expect(consoleSpy.log).toHaveBeenCalledWith(expect.stringContaining('API Request: Harvest'));
       expect(consoleSpy.log).toHaveBeenCalledWith(
         expect.stringContaining('"endpoint": "GET /v2/users"')
       );
@@ -187,28 +169,18 @@ describe('Logger', () => {
 
     test('apiResponse should log info message with response details', () => {
       Logger.apiResponse('Slack', 200, { ok: true });
-      expect(consoleSpy.log).toHaveBeenCalledWith(
-        expect.stringContaining('API Response: Slack')
-      );
-      expect(consoleSpy.log).toHaveBeenCalledWith(
-        expect.stringContaining('"statusCode": 200')
-      );
+      expect(consoleSpy.log).toHaveBeenCalledWith(expect.stringContaining('API Response: Slack'));
+      expect(consoleSpy.log).toHaveBeenCalledWith(expect.stringContaining('"statusCode": 200'));
     });
 
     test('userAnalysis should log info message with analysis details', () => {
       const usersToNotify = [
-        { id: 1, first_name: 'John', last_name: 'Doe', email: 'john@example.com', totalHours: 5 }
+        { id: 1, first_name: 'John', last_name: 'Doe', email: 'john@example.com', totalHours: 5 },
       ];
       Logger.userAnalysis('daily', 10, 1, usersToNotify);
-      expect(consoleSpy.log).toHaveBeenCalledWith(
-        expect.stringContaining('User Analysis: daily')
-      );
-      expect(consoleSpy.log).toHaveBeenCalledWith(
-        expect.stringContaining('"totalUsers": 10')
-      );
-      expect(consoleSpy.log).toHaveBeenCalledWith(
-        expect.stringContaining('"usersToNotify": 1')
-      );
+      expect(consoleSpy.log).toHaveBeenCalledWith(expect.stringContaining('User Analysis: daily'));
+      expect(consoleSpy.log).toHaveBeenCalledWith(expect.stringContaining('"totalUsers": 10'));
+      expect(consoleSpy.log).toHaveBeenCalledWith(expect.stringContaining('"usersToNotify": 1'));
     });
 
     test('notificationSent should log info message with notification details', () => {
@@ -216,12 +188,8 @@ describe('Logger', () => {
       expect(consoleSpy.log).toHaveBeenCalledWith(
         expect.stringContaining('Notification Sent: daily')
       );
-      expect(consoleSpy.log).toHaveBeenCalledWith(
-        expect.stringContaining('"usersNotified": 5')
-      );
-      expect(consoleSpy.log).toHaveBeenCalledWith(
-        expect.stringContaining('"channel": "#general"')
-      );
+      expect(consoleSpy.log).toHaveBeenCalledWith(expect.stringContaining('"usersNotified": 5'));
+      expect(consoleSpy.log).toHaveBeenCalledWith(expect.stringContaining('"channel": "#general"'));
     });
 
     test('appStart should log info message with module details', () => {
@@ -245,16 +213,12 @@ describe('Logger', () => {
   describe('Edge Cases', () => {
     test('should handle undefined messages gracefully', () => {
       Logger.info(undefined);
-      expect(consoleSpy.log).toHaveBeenCalledWith(
-        expect.stringContaining('[INFO] undefined')
-      );
+      expect(consoleSpy.log).toHaveBeenCalledWith(expect.stringContaining('[INFO] undefined'));
     });
 
     test('should handle empty string messages', () => {
       Logger.info('');
-      expect(consoleSpy.log).toHaveBeenCalledWith(
-        expect.stringContaining('[INFO] ')
-      );
+      expect(consoleSpy.log).toHaveBeenCalledWith(expect.stringContaining('[INFO] '));
     });
 
     test('should handle complex data objects', () => {
@@ -262,12 +226,10 @@ describe('Logger', () => {
         array: [1, 2, 3],
         nested: { key: 'value' },
         nullValue: null,
-        undefinedValue: undefined
+        undefinedValue: undefined,
       };
       Logger.info('Complex data test', complexData);
-      expect(consoleSpy.log).toHaveBeenCalledWith(
-        expect.stringContaining('"array": [')
-      );
+      expect(consoleSpy.log).toHaveBeenCalledWith(expect.stringContaining('"array": ['));
     });
   });
 });

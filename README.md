@@ -15,12 +15,14 @@ An integration between Harvest and Slack that automatically reminds users who fo
 ## Installation
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/tiaanswart/harvest-notifier.git
 cd harvest-notifier
 ```
 
 2. Install dependencies:
+
 ```bash
 npm install
 ```
@@ -61,16 +63,19 @@ LOG_LEVEL=INFO
 ### Running Notifications
 
 **Daily Notifications:**
+
 ```bash
 npm run daily
 ```
 
 **Weekly Notifications:**
+
 ```bash
 npm run weekly
 ```
 
 **Monthly Notifications:**
+
 ```bash
 npm run monthly
 ```
@@ -78,16 +83,19 @@ npm run monthly
 ### Development
 
 **Start the application:**
+
 ```bash
 npm start
 ```
 
 **Generate documentation:**
+
 ```bash
 npm run docs
 ```
 
 **Serve documentation:**
+
 ```bash
 npm run docs:serve
 ```
@@ -99,21 +107,25 @@ The project includes a comprehensive test suite built with **Vitest**, a modern 
 ### Running Tests
 
 **Run all tests:**
+
 ```bash
 npm test
 ```
 
 **Run tests in watch mode:**
+
 ```bash
 npm run test:watch
 ```
 
 **Run tests with coverage:**
+
 ```bash
 npm run test:coverage
 ```
 
 **Run specific tests:**
+
 ```bash
 npm run test -- test/utils/logger.test.js
 ```
@@ -139,6 +151,7 @@ test/
 ```
 
 **Status:**
+
 - ✅ **Working**: Core functionality tests (87 tests passing)
 - 🔄 **In Progress**: Integration tests, daily module tests (36 tests failing)
 
@@ -149,18 +162,21 @@ test/
 **The core functionality is thoroughly tested and robust!** 🎯
 
 **Why the integration tests fail:**
+
 - The `daily.js` module executes `app()` immediately when imported
 - The module calls `process.exit()` when complete
 - This design makes it difficult to test the full workflow in a test environment
 - However, all individual functions and components are thoroughly tested
 
 **Current Test Results:**
+
 - **Total Tests**: 123
 - **Passing**: 87 (71%)
 - **Failing**: 36 (29%)
 - **Working Test Files**: 6/8
 
 **Core Functionality Tests (87 tests) - ✅ ALL PASSING:**
+
 - ✅ Basic functionality tests (3 tests)
 - ✅ Logger utility tests (24 tests)
 - ✅ Harvest API utility tests (17 tests)
@@ -168,6 +184,7 @@ test/
 - ✅ Template generation tests (20 tests)
 
 **Integration Tests (36 tests) - 🔄 Application Workflow Tests:**
+
 - 🔄 Daily module workflow tests (16 tests) - Module executes immediately with `process.exit()`
 - 🔄 End-to-end integration tests (20 tests) - Full application workflow
 
