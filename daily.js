@@ -16,89 +16,12 @@
  */
 
 require('dotenv').config();
-const fetch = require('node-fetch');
 const moment = require('moment');
+const { getHarvestUsers, getHarvestTeamTimeReport } = require('./utils/harvest-api');
+const { getSlackUsers, sendSlackMessage, matchUsersWithSlack } = require('./utils/slack-api');
+const { createDailyReminderMessage } = require('./templates/slack-templates');
 
-/**
- * Retrieves active users from Harvest API
- * 
- * Fetches all users from the Harvest account and filters out inactive users
- * and users in the exclusion list (whitelist).
- * 
- * @param {string} accountId - The Harvest account ID
- * @param {string} token - The Harvest API token
- * @param {string} excludedUsers - Comma-separated list of email addresses to exclude
- * @returns {Promise<Array>} Array of active Harvest users
- * @throws {Error} If the API request fails
- */
-async function getHarvestUsers(accountId, token, excludedUsers) {
-  console.log('getHarvestUsers');
-  const response = await fetch('https://api.harvestapp.com/v2/users', {
-    method: 'get',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      'Harvest-Account-Id': accountId,
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  const data = await response.json();
-  return data.users.filter(
-    (user) => user.is_active && (!excludedUsers || !excludedUsers.split(',').includes(user.email))
-  );
-}
 
-/**
- * Retrieves team time reports from Harvest API for a specific date range
- * 
- * Fetches time entries for all users within the specified date range.
- * 
- * @param {string} accountId - The Harvest account ID
- * @param {string} token - The Harvest API token
- * @param {string} dateFrom - Start date in YYYY-MM-DD format
- * @param {string} dateTo - End date in YYYY-MM-DD format
- * @returns {Promise<Array>} Array of time report entries
- * @throws {Error} If the API request fails
- */
-async function getHarvestTeamTimeReport(accountId, token, dateFrom, dateTo) {
-  console.log('getHarvestTeamTimeReport');
-  const response = await fetch(
-    `https://api.harvestapp.com/v2/reports/time/team?from=${dateFrom}&to=${dateTo}`,
-    {
-      method: 'get',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        'Harvest-Account-Id': accountId,
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
-  const data = await response.json();
-  return data.results;
-}
-
-/**
- * Retrieves users from Slack workspace
- * 
- * Fetches all users from the Slack workspace and filters out deleted users and bots.
- * 
- * @param {string} token - The Slack API token
- * @returns {Promise<Array>} Array of active Slack users
- * @throws {Error} If the API request fails
- */
-async function getSlackUsers(token) {
-  console.log('getSlackUsers');
-  const response = await fetch('https://slack.com/api/users.list', {
-    method: 'get',
-    headers: {
-      Accept: 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  const data = await response.json();
-  return data.members.filter((user) => !user.deleted && !user.is_bot);
-}
 
 /**
  * Analyzes Harvest data for Dteligence team and identifies users with insufficient hours
@@ -170,96 +93,18 @@ async function slackNotify(usersToNotify, timeSheetDateToCheck) {
     const slackUsers = await getSlackUsers(process.env.SLACK_TOKEN);
     
     // Match Harvest users with Slack users and format notification text
-    usersToNotify.forEach((user) => {
-      const fullName = `${user.first_name} ${user.last_name}`;
-      const slackUser = slackUsers.find(
-        (slackUser) =>
-          [
-            slackUser.profile.real_name_normalized.toLowerCase(),
-            slackUser.profile.display_name_normalized.toLowerCase(),
-          ].includes(fullName.toLowerCase()) ||
-          (slackUser.profile.email || '').toLowerCase() === user.email.toLowerCase()
-      );
-      
-      // Format user mention with hours logged
-      user.slackUser = slackUser
-        ? `<@${slackUser.id}> (Hours logged: ${user.totalHours})`
-        : `${fullName} (Hours logged: ${user.totalHours})`;
-    });
+    const usersWithSlackMentions = matchUsersWithSlack(usersToNotify, slackUsers);
     
     console.log(
       'usersToNotify',
-      usersToNotify.map((user) => user.slackUser)
+      usersWithSlackMentions.map((user) => user.slackUser)
     );
     
-    // Create Slack message blocks
-    const slackBlocks = [
-      {
-        type: 'section',
-        text: {
-          type: 'mrkdwn',
-          text: "*Hi there :sleeq: team! Here's a friendly reminder to complete your timesheets in Harvest. Remember to report your working hours every day to help us keep track of our progress.*",
-        },
-      },
-      {
-        type: 'section',
-        text: {
-          type: 'mrkdwn',
-          text: `We noticed that the following people haven't reported their working hours for ${moment(
-            timeSheetDateToCheck
-          ).format('MMMM Do YYYY')}:`,
-        },
-      },
-      {
-        type: 'section',
-        text: {
-          type: 'mrkdwn',
-          text: `• ${usersToNotify.map((user) => user.slackUser).join('\n• ')}`,
-        },
-      },
-      {
-        type: 'section',
-        text: {
-          type: 'mrkdwn',
-          text: 'Please take a moment to report your hours and react with :heavy_check_mark: to confirm that you have completed your timesheet. Thank you for your cooperation!',
-        },
-      },
-      {
-        type: 'actions',
-        elements: [
-          {
-            type: 'button',
-            text: {
-              type: 'plain_text',
-              text: ':clock5: Report Time',
-              emoji: true,
-            },
-            value: 'report_time',
-            url: 'https://harvestapp.com/time',
-            action_id: 'button-action',
-            style: 'primary',
-          },
-        ],
-      },
-    ];
+    // Create Slack message blocks using template
+    const slackBlocks = createDailyReminderMessage(usersWithSlackMentions, timeSheetDateToCheck);
     
     // Send message to Slack
-    const response = await fetch(
-      `https://slack.com/api/chat.postMessage?channel=${
-        process.env.SLACK_CHANNEL
-      }&blocks=${encodeURIComponent(JSON.stringify(slackBlocks))}&pretty=1`,
-      {
-        method: 'post',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          Accept: 'application/json',
-          charset: 'utf-8',
-          Authorization: `Bearer ${process.env.SLACK_TOKEN}`,
-        },
-      }
-    );
-    const data = await response.json();
-    console.log('slackResponse', data);
+    await sendSlackMessage(process.env.SLACK_CHANNEL, slackBlocks, process.env.SLACK_TOKEN);
   } else {
     return; // No users to notify
   }
