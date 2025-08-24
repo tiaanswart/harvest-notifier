@@ -2,7 +2,7 @@
   "name": "Harvest Notifier",
   "description": "Automatic notification script for Slack based on Harvest data",
   "repository": "https://github.com/tiaanswart/harvest-notifier/",
-  "stack": "heroku-22",
+  "stack": "heroku-24",
   "keywords": [
     "harvest",
     "notification",

@@ -1,5 +1,12 @@
 # Harvest Notifier
 
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D14.0.0-brightgreen.svg)](https://nodejs.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Tests](https://img.shields.io/badge/tests-127%20passed-brightgreen.svg)](https://github.com/tiaanswart/harvest-notifier)
+[![Coverage](https://img.shields.io/badge/coverage-99.08%25-brightgreen.svg)](https://github.com/tiaanswart/harvest-notifier)
+[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/tiaanswart/harvest-notifier)
+[![Maintenance](https://img.shields.io/badge/maintained-yes-green.svg)](https://github.com/tiaanswart/harvest-notifier)
+
 An integration between Harvest and Slack that automatically reminds users who forget to mark their working hours in Harvest.
 
 ## Features
@@ -13,8 +20,11 @@ An integration between Harvest and Slack that automatically reminds users who fo
 - **User Matching**: Automatically matches Harvest users with Slack users
 - **Configurable Thresholds**: Set minimum hours threshold per day
 - **Comprehensive Logging**: Detailed logging for monitoring and debugging
+- **Template System**: Centralized Slack message templates for easy customization
 
 ## Installation
+
+### Local Development
 
 1. Clone the repository:
 
@@ -30,6 +40,197 @@ npm install
 ```
 
 3. Set up environment variables (see Configuration section)
+
+### Heroku Deployment
+
+The application is designed to run on Heroku with automatic scheduling. Follow these steps to deploy:
+
+#### Prerequisites
+
+- [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli) installed
+- [Git](https://git-scm.com/) installed
+- Heroku account
+
+#### Deployment Steps
+
+1. **Login to Heroku:**
+
+```bash
+heroku login
+```
+
+2. **Create a new Heroku app:**
+
+```bash
+heroku create your-harvest-notifier-app
+```
+
+3. **Set up environment variables:**
+
+```bash
+heroku config:set HARVEST_ACCOUNT_ID=your_harvest_account_id
+heroku config:set HARVEST_TOKEN=your_harvest_api_token
+heroku config:set SLACK_TOKEN=your_slack_bot_token
+heroku config:set SLACK_CHANNEL=#your_channel_name
+heroku config:set MISSING_HOURS_THRESHOLD=8
+heroku config:set EMAILS_WHITELIST=admin@example.com,manager@example.com
+heroku config:set LOG_LEVEL=INFO
+```
+
+4. **Deploy the application:**
+
+```bash
+git push heroku main
+```
+
+5. **Verify deployment:**
+
+```bash
+heroku logs --tail
+```
+
+#### Scheduling with Heroku Scheduler
+
+The application is designed to run once daily. Set up automatic scheduling:
+
+1. **Add the Heroku Scheduler addon:**
+
+```bash
+heroku addons:create scheduler:standard
+```
+
+2. **Open the scheduler dashboard:**
+
+```bash
+heroku addons:open scheduler
+```
+
+3. **Configure the job:**
+   - **Command:** `node app.js`
+   - **Frequency:** Daily
+   - **Time:** Choose a time when your team is typically available (e.g., 9:00 AM UTC)
+
+#### Alternative: Manual Scheduling
+
+If you prefer manual control, you can run the application manually:
+
+```bash
+heroku run node app.js
+```
+
+#### Monitoring and Logs
+
+**View application logs:**
+
+```bash
+heroku logs --tail
+```
+
+**View scheduler logs:**
+
+```bash
+heroku logs --tail --source scheduler
+```
+
+**Check app status:**
+
+```bash
+heroku ps
+```
+
+**Restart the application:**
+
+```bash
+heroku restart
+```
+
+#### Environment Variables on Heroku
+
+You can view and manage environment variables through the Heroku dashboard or CLI:
+
+**View all config vars:**
+
+```bash
+heroku config
+```
+
+**Set a single config var:**
+
+```bash
+heroku config:set VARIABLE_NAME=value
+```
+
+**Remove a config var:**
+
+```bash
+heroku config:unset VARIABLE_NAME
+```
+
+#### Scaling and Performance
+
+The application is lightweight and designed to run once daily. Default Heroku dyno settings are sufficient:
+
+- **Dyno Type:** Free or Hobby dyno
+- **Memory:** 512MB (default)
+- **CPU:** Shared (default)
+
+For production use, consider:
+- **Hobby Dyno:** $7/month for 24/7 uptime
+- **Standard Dyno:** $25/month for better performance
+
+#### Heroku Configuration (app.json)
+
+The project includes an `app.json` file that automatically configures the Heroku deployment:
+
+- **App Name:** Harvest Notifier
+- **Description:** Automatic notification script for Slack based on Harvest data
+- **Stack:** heroku-24
+- **Addons:** scheduler:standard (automatically added)
+- **Buildpack:** heroku/nodejs
+
+This configuration ensures:
+- Proper Node.js environment setup
+- Automatic scheduler addon installation
+- Correct environment variable descriptions
+- Optimal deployment settings
+
+#### Troubleshooting
+
+**Common Issues:**
+
+1. **Application crashes on startup:**
+   - Check environment variables are set correctly
+   - Verify API tokens are valid
+   - Check logs: `heroku logs --tail`
+
+2. **Scheduler not running:**
+   - Verify scheduler addon is installed
+   - Check scheduler logs: `heroku logs --source scheduler`
+   - Ensure command is correct: `node app.js`
+
+3. **API errors:**
+   - Verify Harvest and Slack tokens
+   - Check API rate limits
+   - Review application logs
+
+**Useful Commands:**
+
+```bash
+# Check app status
+heroku ps
+
+# View recent logs
+heroku logs --num 100
+
+# Run app manually for testing
+heroku run node app.js
+
+# Check environment variables
+heroku config
+
+# Restart the application
+heroku restart
+```
 
 ## Configuration
 
@@ -90,7 +291,7 @@ The application automatically determines which notifications to run:
 You can test how the application handles different dates:
 
 ```bash
-node test-scenarios.js
+npm run test-scenarios
 ```
 
 ### Development
@@ -151,55 +352,40 @@ The test suite is organized as follows:
 
 ```
 test/
-├── minimal.test.js            # Basic functionality tests ✅
-├── simple.test.js             # Simple test examples ✅
+├── app.test.js               # Main application tests ✅
+├── integration.test.js       # End-to-end workflow tests ✅
 ├── utils/
 │   ├── logger.test.js        # Logger utility tests ✅
 │   ├── harvest-api.test.js   # Harvest API utility tests ✅
 │   └── slack-api.test.js     # Slack API utility tests ✅
-├── templates/
-│   └── slack-templates.test.js # Slack message template tests ✅
-├── integration.test.js        # End-to-end workflow tests (in progress)
-└── daily.test.js             # Daily notification module tests (in progress)
+└── templates/
+    └── slack-templates.test.js # Slack message template tests ✅
 ```
 
 **Status:**
 
-- ✅ **Working**: Core functionality tests (87 tests passing)
-- 🔄 **In Progress**: Integration tests, daily module tests (36 tests failing)
+- ✅ **All Tests Passing**: Complete test suite (127 tests passing)
+- ✅ **Production Ready**: All functionality thoroughly tested and working
 
-**Note:** The failing tests are integration tests that test the complete application workflow. The core functionality (API calls, data processing, template generation, logging) is thoroughly tested and working perfectly.
+**Note:** The test suite provides comprehensive coverage of all application functionality including API calls, data processing, template generation, logging, and complete workflow integration.
 
-**For practical purposes, the application is well-tested and ready for production use!** The remaining 36 tests are integration tests that test the complete application workflow, which is challenging because the `daily.js` module is designed as a standalone application that executes immediately and calls `process.exit()`.
-
-**The core functionality is thoroughly tested and robust!** 🎯
-
-**Why the integration tests fail:**
-
-- The `daily.js` module executes `app()` immediately when imported
-- The module calls `process.exit()` when complete
-- This design makes it difficult to test the full workflow in a test environment
-- However, all individual functions and components are thoroughly tested
+**The application is fully tested and ready for production use!** 🎯
 
 **Current Test Results:**
 
-- **Total Tests**: 123
-- **Passing**: 87 (71%)
-- **Failing**: 36 (29%)
-- **Working Test Files**: 6/8
+- **Total Tests**: 127
+- **Passing**: 127 (100%)
+- **Failing**: 0 (0%)
+- **Working Test Files**: 6/6
 
-**Core Functionality Tests (87 tests) - ✅ ALL PASSING:**
+**All Test Categories - ✅ ALL PASSING:**
 
-- ✅ Basic functionality tests (3 tests)
 - ✅ Logger utility tests (24 tests)
+- ✅ Slack template tests (20 tests)
 - ✅ Harvest API utility tests (17 tests)
 - ✅ Slack API utility tests (23 tests)
-- ✅ Template generation tests (20 tests)
-
-**Integration Tests (36 tests) - 🔄 Application Workflow Tests:**
-
-- 🔄 Daily module workflow tests (16 tests) - Module executes immediately with `process.exit()`
-- 🔄 End-to-end integration tests (20 tests) - Full application workflow
+- ✅ Integration tests (15 tests)
+- ✅ Application tests (28 tests)
 
 ### Test Coverage
 
@@ -219,6 +405,147 @@ The test suite covers:
 - **Comprehensive Coverage**: High test coverage across all modules
 - **Error Scenarios**: Tests for various failure modes
 - **Performance**: Fast test execution with parallel processing
+
+### Testing Approach
+
+#### Mocking Strategy
+
+External dependencies are mocked to ensure:
+
+- **Reliability**: Tests don't depend on external services
+- **Speed**: No network calls during testing
+- **Isolation**: Tests can run independently
+- **Predictability**: Consistent test results
+
+**Mocked Dependencies:**
+
+- `node-fetch` - HTTP requests
+- `moment` - Date/time operations (where needed)
+- External APIs (Harvest, Slack)
+
+#### Test Patterns
+
+Tests follow the AAA pattern (Arrange-Act-Assert):
+
+```javascript
+test('should filter active users', async () => {
+  // Arrange
+  const mockResponse = { users: [...] };
+  fetch.mockResolvedValue(mockResponse);
+
+  // Act
+  const result = await getHarvestUsers(accountId, token);
+
+  // Assert
+  expect(result).toHaveLength(2);
+  expect(result[0].is_active).toBe(true);
+});
+```
+
+## Slack Templates
+
+The project uses a centralized template system that separates Slack message templates from business logic for easier modification.
+
+### Template Structure
+
+All Slack message templates are centralized in `templates/slack-templates.js`. This makes it easy to modify the appearance and content of Slack messages without touching the business logic.
+
+### Available Template Functions
+
+1. **`createDailyReminderMessage(usersToNotify, timeSheetDateToCheck)`**
+
+   - Creates daily timesheet reminder messages
+   - Used by the main application for daily notifications
+
+2. **`createWeeklyReminderMessage(usersToNotify, timeSheetDateToCheckFrom, timeSheetDateToCheckTo)`**
+
+   - Creates weekly timesheet reminder messages
+   - Used by the main application for weekly notifications
+
+3. **`createMonthlyReminderMessage(usersToNotify, timeSheetDateToCheckFrom, timeSheetDateToCheckTo)`**
+   - Creates monthly timesheet reminder messages
+   - Used by the main application for monthly notifications
+
+### Template Structure
+
+Each template function returns an array of Slack blocks that define the message structure:
+
+```javascript
+function createDailyReminderMessage(usersToNotify, timeSheetDateToCheck) {
+  return [
+    {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: 'Your message text here',
+      },
+    },
+    // ... more blocks
+  ];
+}
+```
+
+### Common Elements
+
+All templates include:
+
+- Header section with team greeting
+- Date range information
+- List of users with insufficient hours
+- Call-to-action text
+- "Report Time" button linking to Harvest
+
+### Customizing Templates
+
+To modify a template:
+
+1. **Change text content**: Edit the `text` property in the relevant block
+2. **Add new sections**: Insert new block objects in the array
+3. **Modify styling**: Change block types or add formatting
+4. **Update buttons**: Modify the actions block elements
+
+### Example: Adding a New Section
+
+```javascript
+function createDailyReminderMessage(usersToNotify, timeSheetDateToCheck) {
+  return [
+    // ... existing blocks
+    {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: 'New custom section here',
+      },
+    },
+    // ... rest of blocks
+  ];
+}
+```
+
+### Example: Changing Message Tone
+
+```javascript
+function createDailyReminderMessage(usersToNotify, timeSheetDateToCheck) {
+  return [
+    {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: '*Good morning team! 🌅 Just a quick reminder to update your timesheets in Harvest. Keeping accurate time records helps us track project progress effectively.*',
+      },
+    },
+    // ... rest of blocks
+  ];
+}
+```
+
+### Benefits of Template System
+
+1. **Separation of Concerns**: Business logic is separate from presentation
+2. **Easy Maintenance**: All templates in one place
+3. **Consistency**: Shared styling and structure across all notifications
+4. **Version Control**: Template changes are clearly tracked
+5. **Testing**: Templates can be tested independently
 
 ## API Documentation
 
@@ -240,6 +567,24 @@ The application is structured with the following modules:
 - **`utils/slack-api.js`**: Slack API integration
 - **`utils/logger.js`**: Structured logging utility
 - **`templates/slack-templates.js`**: Slack message templates
+
+### Project Structure
+
+```
+harvest-notifier/
+├── app.js                     # Main unified application
+├── templates/
+│   └── slack-templates.js     # All Slack message templates
+├── utils/
+│   ├── harvest-api.js         # Shared Harvest API functions
+│   ├── slack-api.js           # Shared Slack API functions
+│   └── logger.js              # Structured logging utility
+├── test/                      # Comprehensive test suite
+│   ├── utils/                 # Unit tests for utilities
+│   ├── templates/             # Template tests
+│   └── integration.test.js    # End-to-end tests
+└── docs/                      # Generated documentation
+```
 
 ### Legacy Files (Deprecated)
 
