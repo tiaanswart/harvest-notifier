@@ -20,6 +20,7 @@ const moment = require('moment');
 const { getHarvestUsers, getHarvestTeamTimeReport } = require('./utils/harvest-api');
 const { getSlackUsers, sendSlackMessage, matchUsersWithSlack } = require('./utils/slack-api');
 const { createMonthlyReminderMessage } = require('./templates/slack-templates');
+const Logger = require('./utils/logger');
 
 
 
@@ -55,7 +56,7 @@ function workday_count(start, end) {
 }
 
 /**
- * Analyzes Harvest data for Dteligence team and identifies users with insufficient monthly hours
+ * Analyzes Harvest data and identifies users with insufficient monthly hours
  * 
  * Compares each user's logged hours for the month against the monthly threshold
  * (workdays x daily threshold) and returns a list of users who need to be notified.
@@ -65,23 +66,30 @@ function workday_count(start, end) {
  * @returns {Promise<Array>} Array of users who need notification
  * @throws {Error} If API requests fail
  */
-async function dteligence(timeSheetDateToCheckFrom, timeSheetDateToCheckTo) {
-  console.log('dteligence');
+async function analyzeHarvestData(timeSheetDateToCheckFrom, timeSheetDateToCheckTo) {
+  Logger.functionEntry('analyzeHarvestData', { timeSheetDateToCheckFrom, timeSheetDateToCheckTo });
   
   // Get active users from Harvest
+  Logger.info('Fetching Harvest users');
   const harvestUsers = await getHarvestUsers(
-    process.env.DTELIGENCE_HARVEST_ACCOUNT_ID,
+    process.env.HARVEST_ACCOUNT_ID,
     process.env.HARVEST_TOKEN,
-    process.env.DTELIGENCE_EMAILS_WHITELIST
+    process.env.EMAILS_WHITELIST
   );
+  Logger.debug('Harvest users retrieved', { count: harvestUsers.length });
   
   // Get time reports for the specified month
+  Logger.info('Fetching Harvest time reports', { 
+    from: timeSheetDateToCheckFrom, 
+    to: timeSheetDateToCheckTo 
+  });
   const harvestTeamTimeReport = await getHarvestTeamTimeReport(
-    process.env.DTELIGENCE_HARVEST_ACCOUNT_ID,
+    process.env.HARVEST_ACCOUNT_ID,
     process.env.HARVEST_TOKEN,
     timeSheetDateToCheckFrom,
     timeSheetDateToCheckTo
   );
+  Logger.debug('Harvest time reports retrieved', { count: harvestTeamTimeReport.length });
   
   const usersToNotify = [];
   
@@ -90,26 +98,43 @@ async function dteligence(timeSheetDateToCheckFrom, timeSheetDateToCheckTo) {
     moment(timeSheetDateToCheckFrom),
     moment(timeSheetDateToCheckTo)
   );
+  Logger.info('Calculated expected workdays', { expectedWorkdays });
   
   // Check each user's monthly hours against the threshold
+  const threshold = process.env.MISSING_HOURS_THRESHOLD * expectedWorkdays;
+  Logger.info('Analyzing user hours against threshold', { threshold });
+  
   harvestUsers.forEach((user) => {
     // Filter reports by user_id
     const timeReports = harvestTeamTimeReport.filter((t) => t.user_id === user.id);
     // Sum up the total_hours from each filtered report
     const totalHours = timeReports.reduce((sum, report) => sum + report.total_hours, 0);
     
+    Logger.debug('User hours analysis', {
+      userId: user.id,
+      userName: `${user.first_name} ${user.last_name}`,
+      totalHours,
+      threshold,
+      timeReportsCount: timeReports.length
+    });
+    
     // If monthly hours are below threshold (workdays x daily threshold), add to notification list
-    if (
-      totalHours <
-      process.env.MISSING_HOURS_THRESHOLD * expectedWorkdays
-    ) {
+    if (totalHours < threshold) {
       usersToNotify.push({
         ...user,
         totalHours,
       });
+      Logger.info('User added to notification list', {
+        userId: user.id,
+        userName: `${user.first_name} ${user.last_name}`,
+        totalHours,
+        threshold
+      });
     }
-    console.log('usersToNotify', usersToNotify);
   });
+  
+  Logger.userAnalysis('monthly', harvestUsers.length, usersToNotify.length, usersToNotify);
+  Logger.functionExit('analyzeHarvestData', { usersToNotifyCount: usersToNotify.length });
   
   return usersToNotify;
 }
@@ -128,28 +153,40 @@ async function dteligence(timeSheetDateToCheckFrom, timeSheetDateToCheckTo) {
  * @throws {Error} If Slack API request fails
  */
 async function slackNotify(usersToNotify, timeSheetDateToCheckFrom, timeSheetDateToCheckTo) {
-  console.log('slackNotify');
+  Logger.functionEntry('slackNotify', { 
+    usersToNotifyCount: usersToNotify?.length || 0,
+    timeSheetDateToCheckFrom, 
+    timeSheetDateToCheckTo 
+  });
   
   // Only proceed if there are users to notify
   if (usersToNotify && usersToNotify.length) {
+    Logger.info('Fetching Slack users for notification matching');
     const slackUsers = await getSlackUsers(process.env.SLACK_TOKEN);
+    Logger.debug('Slack users retrieved', { count: slackUsers.length });
     
     // Match Harvest users with Slack users and format notification text
     const usersWithSlackMentions = matchUsersWithSlack(usersToNotify, slackUsers);
-    
-    console.log(
-      'usersToNotify',
-      usersWithSlackMentions.map((user) => user.slackUser)
-    );
+    Logger.debug('Users matched with Slack', { 
+      matchedCount: usersWithSlackMentions.length,
+      slackUsers: usersWithSlackMentions.map((user) => user.slackUser)
+    });
     
     // Create Slack message blocks using template
+    Logger.info('Creating Slack message');
     const slackBlocks = createMonthlyReminderMessage(usersWithSlackMentions, timeSheetDateToCheckFrom, timeSheetDateToCheckTo);
     
     // Send message to Slack
+    Logger.info('Sending Slack notification', { channel: process.env.SLACK_CHANNEL });
     await sendSlackMessage(process.env.SLACK_CHANNEL, slackBlocks, process.env.SLACK_TOKEN);
+    
+    Logger.notificationSent('monthly', usersToNotify.length, process.env.SLACK_CHANNEL);
   } else {
+    Logger.info('No users to notify, skipping Slack notification');
     return; // No users to notify
   }
+  
+  Logger.functionExit('slackNotify');
 }
 
 /**
@@ -161,15 +198,33 @@ async function slackNotify(usersToNotify, timeSheetDateToCheckFrom, timeSheetDat
  * @returns {Promise<void>}
  */
 async function app() {
+  Logger.appStart('monthly', {
+    currentDate: moment().format('YYYY-MM-DD'),
+    isLastDayOfMonth: moment().format('YYYY-MM-DD') === moment().endOf('month').format('YYYY-MM-DD')
+  });
+  
   // Check if today is the last day of the month
   if (moment().format('YYYY-MM-DD') === moment().endOf('month').format('YYYY-MM-DD')) {
+    Logger.info('Processing monthly notification - last day of month detected');
+    
     // Check the entire month
     let timeSheetDateToCheckFrom = moment().startOf('month').format('YYYY-MM-DD');
     let timeSheetDateToCheckTo = moment().format('YYYY-MM-DD');
     
+    Logger.info('Monthly date range', { 
+      from: timeSheetDateToCheckFrom, 
+      to: timeSheetDateToCheckTo 
+    });
+    
     // Get users to notify and send Slack message
-    const usersToNotify = [...(await dteligence(timeSheetDateToCheckFrom, timeSheetDateToCheckTo))];
+    const usersToNotify = [...(await analyzeHarvestData(timeSheetDateToCheckFrom, timeSheetDateToCheckTo))];
     await slackNotify(usersToNotify, timeSheetDateToCheckFrom, timeSheetDateToCheckTo);
+    
+    Logger.appEnd('monthly', 'Monthly notification completed');
+    process.exit();
+  } else {
+    Logger.info('Skipping monthly notification - not last day of month');
+    Logger.appEnd('monthly', 'Not last day of month');
     process.exit();
   }
 }

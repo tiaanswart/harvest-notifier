@@ -40,7 +40,7 @@ Each module contains the following core functions:
 - `getHarvestUsers()` - Retrieves active users from Harvest API
 - `getHarvestTeamTimeReport()` - Fetches time reports for a date range
 - `getSlackUsers()` - Retrieves users from Slack workspace
-- `dteligence()` - Analyzes data and identifies users needing notifications
+- `analyzeHarvestData()` - Analyzes data and identifies users needing notifications
 - `slackNotify()` - Sends formatted Slack notifications
 - `app()` - Main application logic and scheduling
 
@@ -63,7 +63,7 @@ Each module contains the following core functions:
    ```env
    # Harvest API Configuration
    HARVEST_TOKEN=your_harvest_api_token
-   DTELIGENCE_HARVEST_ACCOUNT_ID=your_harvest_account_id
+   HARVEST_ACCOUNT_ID=your_harvest_account_id
    
    # Slack Configuration
    SLACK_TOKEN=your_slack_bot_token
@@ -71,7 +71,10 @@ Each module contains the following core functions:
    
    # Notification Settings
    MISSING_HOURS_THRESHOLD=8
-   DTELIGENCE_EMAILS_WHITELIST=user1@example.com,user2@example.com
+   EMAILS_WHITELIST=user1@example.com,user2@example.com
+   
+   # Logging Configuration
+   LOG_LEVEL=INFO
    ```
 
 ## Configuration
@@ -81,11 +84,12 @@ Each module contains the following core functions:
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `HARVEST_TOKEN` | Harvest API access token | `Bearer token from Harvest` |
-| `DTELIGENCE_HARVEST_ACCOUNT_ID` | Harvest account ID | `123456` |
+| `HARVEST_ACCOUNT_ID` | Harvest account ID | `123456` |
 | `SLACK_TOKEN` | Slack bot user OAuth token | `xoxb-token` |
 | `SLACK_CHANNEL` | Slack channel ID to post notifications | `C1234567890` |
 | `MISSING_HOURS_THRESHOLD` | Minimum hours required per day | `8` |
-| `DTELIGENCE_EMAILS_WHITELIST` | Comma-separated emails to exclude | `admin@company.com` |
+| `EMAILS_WHITELIST` | Comma-separated emails to exclude | `admin@company.com` |
+| `LOG_LEVEL` | Logging verbosity level | `INFO` |
 
 ### API Permissions Required
 
@@ -191,15 +195,6 @@ The system includes basic error handling:
 
 ## Development
 
-### Adding New Teams
-
-To add notifications for additional teams:
-
-1. Create new environment variables for the team's Harvest account
-2. Duplicate the `dteligence()` function and rename it for the new team
-3. Update the `app()` function to call the new team function
-4. Add appropriate scheduling logic
-
 ### Customizing Notifications
 
 Modify the `slackBlocks` array in the `slackNotify()` function to customize:
@@ -227,16 +222,42 @@ Modify the `slackBlocks` array in the `slackNotify()` function to customize:
    - Check network connectivity
    - Verify API rate limits
 
+### Logging
+
+The system includes comprehensive logging with different levels controlled by the `LOG_LEVEL` environment variable:
+
+- **ERROR**: Only error messages
+- **WARN**: Error and warning messages  
+- **INFO**: Error, warning, and info messages (default)
+- **DEBUG**: All messages including detailed debug information
+
+#### Log Levels
+
+- **ERROR**: Critical errors that prevent the application from functioning
+- **WARN**: Warning messages for potential issues
+- **INFO**: General information about application flow and results
+- **DEBUG**: Detailed information for troubleshooting
+
+#### Example Log Output
+
+```
+[2024-01-15T09:00:00.000Z] [INFO] Application Starting: daily
+[2024-01-15T09:00:00.001Z] [INFO] Processing daily notification - weekday detected
+[2024-01-15T09:00:00.002Z] [INFO] Fetching Harvest users
+[2024-01-15T09:00:00.500Z] [INFO] API Response: Harvest 200
+[2024-01-15T09:00:00.501Z] [DEBUG] Harvest users retrieved 15
+[2024-01-15T09:00:00.502Z] [INFO] User Analysis: daily 15 3
+[2024-01-15T09:00:00.503Z] [INFO] Notification Sent: daily 3 #timesheets
+[2024-01-15T09:00:00.504Z] [INFO] Application Ending: daily
+```
+
 ### Debug Mode
 
-Add console logging to debug issues:
+Set `LOG_LEVEL=DEBUG` in your environment variables to enable detailed logging for troubleshooting:
 
-```javascript
-console.log('Debug info:', {
-  harvestUsers: harvestUsers.length,
-  timeReports: harvestTeamTimeReport.length,
-  usersToNotify: usersToNotify.length
-});
+```bash
+export LOG_LEVEL=DEBUG
+node daily.js
 ```
 
 ## License

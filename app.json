@@ -9,18 +9,12 @@
     "slack"
   ],
   "env": {
-    "DTELIGENCE_HARVEST_ACCOUNT_ID": {
+    "HARVEST_ACCOUNT_ID": {
+      "description": "Harvest account ID for the team to monitor",
       "required": true
     },
-    "SLEEQ_DIGITAL_HARVEST_ACCOUNT_ID": {
-      "required": true
-    },
-    "DTELIGENCE_EMAILS_WHITELIST": {
-      "description": "DTELIGENCE_EMAILS_WHITELIST is a variable that lists emails separated by commas, which don't need to be notified in Slack. For example, administrators or managers.",
-      "required": false
-    },
-    "SLEEQ_DIGITAL_EMAILS_WHITELIST": {
-      "description": "SLEEQ_DIGITAL_EMAILS_WHITELIST is a variable that lists emails separated by commas, which don't need to be notified in Slack. For example, administrators or managers.",
+    "EMAILS_WHITELIST": {
+      "description": "EMAILS_WHITELIST is a variable that lists emails separated by commas, which don't need to be notified in Slack. For example, administrators or managers.",
       "required": false
     },
     "HARVEST_TOKEN": {
@@ -36,6 +30,10 @@
     "SLACK_CHANNEL": {
       "description": "SLACK_CHANNEL is a variable that is used to determine which channel the employee will be notified in Slack",
       "required": true
+    },
+    "LOG_LEVEL": {
+      "description": "LOG_LEVEL controls the verbosity of logging. Options: ERROR, WARN, INFO, DEBUG. Default: INFO",
+      "required": false
     }
   },
   "addons": [

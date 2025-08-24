@@ -10,6 +10,7 @@
  */
 
 const fetch = require('node-fetch');
+const Logger = require('./logger');
 
 /**
  * Retrieves active users from Harvest API
@@ -24,7 +25,9 @@ const fetch = require('node-fetch');
  * @throws {Error} If the API request fails
  */
 async function getHarvestUsers(accountId, token, excludedUsers) {
-  console.log('getHarvestUsers');
+  Logger.functionEntry('getHarvestUsers', { accountId, excludedUsers });
+  
+  Logger.apiRequest('Harvest', 'GET /v2/users', { accountId });
   const response = await fetch('https://api.harvestapp.com/v2/users', {
     method: 'get',
     headers: {
@@ -34,10 +37,21 @@ async function getHarvestUsers(accountId, token, excludedUsers) {
       Authorization: `Bearer ${token}`,
     },
   });
+  
   const data = await response.json();
-  return data.users.filter(
+  Logger.apiResponse('Harvest', response.status, { usersCount: data.users?.length || 0 });
+  
+  const filteredUsers = data.users.filter(
     (user) => user.is_active && (!excludedUsers || !excludedUsers.split(',').includes(user.email))
   );
+  
+  Logger.functionExit('getHarvestUsers', { 
+    totalUsers: data.users?.length || 0, 
+    activeUsers: filteredUsers.length,
+    excludedUsers: excludedUsers ? excludedUsers.split(',').length : 0
+  });
+  
+  return filteredUsers;
 }
 
 /**
@@ -53,7 +67,9 @@ async function getHarvestUsers(accountId, token, excludedUsers) {
  * @throws {Error} If the API request fails
  */
 async function getHarvestTeamTimeReport(accountId, token, dateFrom, dateTo) {
-  console.log('getHarvestTeamTimeReport');
+  Logger.functionEntry('getHarvestTeamTimeReport', { accountId, dateFrom, dateTo });
+  
+  Logger.apiRequest('Harvest', 'GET /v2/reports/time/team', { accountId, dateFrom, dateTo });
   const response = await fetch(
     `https://api.harvestapp.com/v2/reports/time/team?from=${dateFrom}&to=${dateTo}`,
     {
@@ -66,7 +82,14 @@ async function getHarvestTeamTimeReport(accountId, token, dateFrom, dateTo) {
       },
     }
   );
+  
   const data = await response.json();
+  Logger.apiResponse('Harvest', response.status, { resultsCount: data.results?.length || 0 });
+  
+  Logger.functionExit('getHarvestTeamTimeReport', { 
+    resultsCount: data.results?.length || 0 
+  });
+  
   return data.results;
 }
 
