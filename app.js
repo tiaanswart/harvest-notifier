@@ -51,6 +51,120 @@ function workday_count(start, end) {
 }
 
 /**
+ * Calculates expected working days for a user based on their weekly capacity
+ *
+ * @param {number} weeklyCapacity - Weekly capacity in seconds
+ * @param {number} hoursPerDay - Assumed hours per working day (default: 8)
+ * @returns {number} Expected working days per week
+ */
+function calculateExpectedWorkingDays(weeklyCapacity, hoursPerDay = 8) {
+  // Convert weekly capacity from seconds to hours
+  const weeklyHours = weeklyCapacity / 3600;
+  
+  // Calculate working days based on hours per day
+  const workingDays = weeklyHours / hoursPerDay;
+  
+  // Round to 2 decimal places for precision
+  return Math.round(workingDays * 100) / 100;
+}
+
+/**
+ * Calculates personalized threshold for a user based on their working pattern
+ *
+ * @param {Object} user - User object with weekly_capacity
+ * @param {string} notificationType - 'daily', 'weekly', or 'monthly'
+ * @param {string} timeSheetDateToCheckFrom - Start date for monthly calculations
+ * @param {string} timeSheetDateToCheckTo - End date for monthly calculations
+ * @returns {number} Personalized threshold in hours
+ */
+function calculatePersonalizedThreshold(user, notificationType, timeSheetDateToCheckFrom, timeSheetDateToCheckTo) {
+  const baseHoursPerDay = parseFloat(process.env.MISSING_HOURS_THRESHOLD) || 7.5;
+  const expectedWorkingDaysPerWeek = calculateExpectedWorkingDays(user.weekly_capacity);
+  
+  Logger.debug('Calculating personalized threshold', {
+    userId: user.id,
+    userName: `${user.first_name} ${user.last_name}`,
+    weeklyCapacity: user.weekly_capacity,
+    weeklyCapacityHours: user.weekly_capacity / 3600,
+    expectedWorkingDaysPerWeek,
+    baseHoursPerDay,
+    notificationType
+  });
+
+  if (notificationType === 'daily') {
+    // For daily, use the base hours per day
+    return baseHoursPerDay;
+  } else if (notificationType === 'weekly') {
+    // For weekly, calculate based on their expected working days
+    return baseHoursPerDay * expectedWorkingDaysPerWeek;
+  } else if (notificationType === 'monthly') {
+    // For monthly, calculate expected workdays in the month and apply their working pattern
+    const totalWorkdaysInPeriod = workday_count(
+      moment(timeSheetDateToCheckFrom),
+      moment(timeSheetDateToCheckTo)
+    );
+    
+    // Calculate what portion of those workdays this user should work
+    const userWorkdaysInPeriod = (totalWorkdaysInPeriod * expectedWorkingDaysPerWeek) / 5;
+    
+    return baseHoursPerDay * userWorkdaysInPeriod;
+  }
+  
+  return baseHoursPerDay; // fallback
+}
+
+/**
+ * Checks if a user should be included in daily notifications based on their weekly capacity
+ *
+ * @param {Object} user - User object with weekly_capacity
+ * @returns {boolean} True if user should be included in daily notifications
+ */
+function shouldIncludeInDailyNotifications(user) {
+  const dailyThreshold = parseFloat(process.env.DAILY_NOTIFICATION_WEEKLY_CAPACITY_THRESHOLD) || 0;
+  const userWeeklyCapacityHours = user.weekly_capacity / 3600;
+  
+  Logger.debug('Checking daily notification eligibility', {
+    userId: user.id,
+    userName: `${user.first_name} ${user.last_name}`,
+    userWeeklyCapacityHours,
+    dailyThreshold,
+    shouldInclude: userWeeklyCapacityHours >= dailyThreshold
+  });
+  
+  return userWeeklyCapacityHours >= dailyThreshold;
+}
+
+/**
+ * Checks if a user should be included in any notifications based on their weekly capacity
+ *
+ * @param {Object} user - User object with weekly_capacity
+ * @returns {boolean} True if user should be included in notifications
+ */
+function shouldIncludeInNotifications(user) {
+  // Handle null, undefined, or invalid weekly_capacity values
+  if (!user.weekly_capacity || user.weekly_capacity <= 0) {
+    Logger.debug('Checking notification eligibility', {
+      userId: user.id,
+      userName: `${user.first_name} ${user.last_name}`,
+      weeklyCapacity: user.weekly_capacity,
+      shouldInclude: false
+    });
+    return false;
+  }
+  
+  const userWeeklyCapacityHours = user.weekly_capacity / 3600;
+  
+  Logger.debug('Checking notification eligibility', {
+    userId: user.id,
+    userName: `${user.first_name} ${user.last_name}`,
+    userWeeklyCapacityHours,
+    shouldInclude: userWeeklyCapacityHours > 0
+  });
+  
+  return userWeeklyCapacityHours > 0;
+}
+
+/**
  * Analyzes Harvest data and identifies users with insufficient hours
  *
  * @param {string} timeSheetDateToCheckFrom - Start date in YYYY-MM-DD format
@@ -90,23 +204,8 @@ async function analyzeHarvestData(timeSheetDateToCheckFrom, timeSheetDateToCheck
     Logger.debug('Harvest time reports retrieved', { count: harvestTeamTimeReport?.length || 0 });
 
     const usersToNotify = [];
-    let threshold;
 
-    // Calculate threshold based on notification type
-    if (notificationType === 'daily') {
-      threshold = process.env.MISSING_HOURS_THRESHOLD;
-    } else if (notificationType === 'weekly') {
-      threshold = process.env.MISSING_HOURS_THRESHOLD * 5;
-    } else if (notificationType === 'monthly') {
-      const expectedWorkdays = workday_count(
-        moment(timeSheetDateToCheckFrom),
-        moment(timeSheetDateToCheckTo)
-      );
-      threshold = process.env.MISSING_HOURS_THRESHOLD * expectedWorkdays;
-      Logger.info('Calculated expected workdays', { expectedWorkdays });
-    }
-
-    Logger.info('Analyzing user hours against threshold', { threshold, notificationType });
+    Logger.info('Analyzing user hours with personalized thresholds', { notificationType });
 
     // Check each user's hours against the threshold
     if (!harvestUsers || !Array.isArray(harvestUsers)) {
@@ -117,30 +216,61 @@ async function analyzeHarvestData(timeSheetDateToCheckFrom, timeSheetDateToCheck
     }
 
     harvestUsers.forEach((user) => {
+      // Check if user should be included in any notifications (exclude users with 0 capacity)
+      if (!shouldIncludeInNotifications(user)) {
+        Logger.debug('User excluded from notifications due to 0 weekly capacity', {
+          userId: user.id,
+          userName: `${user.first_name} ${user.last_name}`,
+          weeklyCapacityHours: user.weekly_capacity / 3600,
+        });
+        return; // Skip this user entirely
+      }
+
       // Filter reports by user_id
       const timeReports = harvestTeamTimeReport?.filter((t) => t.user_id === user.id) || [];
       // Sum up the total_hours from each filtered report
       const totalHours = timeReports.reduce((sum, report) => sum + report.total_hours, 0);
 
+      // Calculate personalized threshold for this user
+      const personalizedThreshold = calculatePersonalizedThreshold(
+        user, 
+        notificationType, 
+        timeSheetDateToCheckFrom, 
+        timeSheetDateToCheckTo
+      );
+
       Logger.debug('User hours analysis', {
         userId: user.id,
         userName: `${user.first_name} ${user.last_name}`,
         totalHours,
-        threshold,
+        personalizedThreshold,
         timeReportsCount: timeReports.length,
+        weeklyCapacity: user.weekly_capacity,
+        weeklyCapacityHours: user.weekly_capacity / 3600,
       });
 
-      // If hours are below threshold, add to notification list
-      if (totalHours < threshold) {
+      // For daily notifications, check if user should be included based on weekly capacity threshold
+      if (notificationType === 'daily' && !shouldIncludeInDailyNotifications(user)) {
+        Logger.debug('User excluded from daily notifications due to weekly capacity threshold', {
+          userId: user.id,
+          userName: `${user.first_name} ${user.last_name}`,
+          weeklyCapacityHours: user.weekly_capacity / 3600,
+        });
+        return; // Skip this user for daily notifications
+      }
+
+      // If hours are below personalized threshold, add to notification list
+      if (totalHours < personalizedThreshold) {
         usersToNotify.push({
           ...user,
           totalHours,
+          expectedHours: personalizedThreshold,
         });
         Logger.info('User added to notification list', {
           userId: user.id,
           userName: `${user.first_name} ${user.last_name}`,
           totalHours,
-          threshold,
+          personalizedThreshold,
         });
       }
     });
@@ -371,5 +501,10 @@ export {
   determineNotificationsToRun, 
   getDateRangeForNotification, 
   runNotification, 
-  app 
+  app,
+  calculateExpectedWorkingDays,
+  calculatePersonalizedThreshold,
+  workday_count,
+  shouldIncludeInDailyNotifications,
+  shouldIncludeInNotifications
 };

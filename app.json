@@ -34,6 +34,10 @@
     "LOG_LEVEL": {
       "description": "LOG_LEVEL controls the verbosity of logging. Options: ERROR, WARN, INFO, DEBUG. Default: INFO",
       "required": false
+    },
+    "DAILY_NOTIFICATION_WEEKLY_CAPACITY_THRESHOLD": {
+      "description": "DAILY_NOTIFICATION_WEEKLY_CAPACITY_THRESHOLD is the minimum weekly capacity (in hours) required for users to receive daily notifications. Users below this threshold will only receive weekly and monthly notifications. For example, setting this to 30 means users working less than 30 hours per week won't get daily notifications.",
+      "required": false
     }
   },
   "addons": [

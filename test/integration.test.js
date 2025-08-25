@@ -34,6 +34,7 @@ describe('Integration Tests - Unified App', () => {
       last_name: 'Doe',
       email: 'john@example.com',
       is_active: true,
+      weekly_capacity: 144000, // 40 hours (5 days)
     },
     {
       id: 2,
@@ -41,6 +42,7 @@ describe('Integration Tests - Unified App', () => {
       last_name: 'Smith',
       email: 'jane@example.com',
       is_active: true,
+      weekly_capacity: 86400, // 24 hours (3 days)
     },
     {
       id: 3,
@@ -48,6 +50,7 @@ describe('Integration Tests - Unified App', () => {
       last_name: 'Wilson',
       email: 'bob@example.com',
       is_active: true,
+      weekly_capacity: 144000, // 40 hours (5 days)
     },
   ];
 

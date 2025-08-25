@@ -258,8 +258,17 @@ LOG_LEVEL=INFO
 - `SLACK_TOKEN`: Your Slack bot token
 - `SLACK_CHANNEL`: The Slack channel to send notifications to
 - `MISSING_HOURS_THRESHOLD`: Minimum hours required per day (default: 8)
+- `DAILY_NOTIFICATION_WEEKLY_CAPACITY_THRESHOLD`: Minimum weekly capacity (in hours) required for users to receive daily notifications. Users below this threshold will only receive weekly and monthly notifications (default: 0 - all users get daily notifications)
 - `EMAILS_WHITELIST`: Comma-separated list of email addresses to exclude from notifications
 - `LOG_LEVEL`: Logging level (ERROR, WARN, INFO, DEBUG)
+
+### User Filtering Logic
+
+The system automatically filters users based on their weekly capacity:
+
+1. **Zero Capacity Users**: Users with `weekly_capacity` of 0, null, or undefined are completely excluded from all notifications (daily, weekly, and monthly)
+2. **Daily Notification Threshold**: Users with weekly capacity below `DAILY_NOTIFICATION_WEEKLY_CAPACITY_THRESHOLD` only receive weekly and monthly notifications
+3. **Active Users**: Users with weekly capacity > 0 receive notifications based on their personalized thresholds
 
 ## Usage
 
