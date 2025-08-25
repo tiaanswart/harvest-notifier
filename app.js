@@ -262,22 +262,22 @@ function getDateRangeForNotification(notificationType) {
     
     if (['Tuesday', 'Wednesday', 'Thursday', 'Friday'].includes(weekday)) {
       // Check previous day
-      dateToCheck = currentDate.subtract(1, 'days').format('YYYY-MM-DD');
+      dateToCheck = currentDate.clone().subtract(1, 'days').format('YYYY-MM-DD');
     } else {
       // Monday: check Friday (3 days back)
-      dateToCheck = currentDate.subtract(3, 'days').format('YYYY-MM-DD');
+      dateToCheck = currentDate.clone().subtract(3, 'days').format('YYYY-MM-DD');
     }
     
     return { from: dateToCheck, to: dateToCheck };
   } else if (notificationType === 'weekly') {
     // Check the entire week (Monday to Friday)
     const from = currentDate.clone().startOf('week').add(1, 'days').format('YYYY-MM-DD');
-    const to = currentDate.format('YYYY-MM-DD');
+    const to = currentDate.clone().format('YYYY-MM-DD');
     return { from, to };
   } else if (notificationType === 'monthly') {
     // Check the entire month
-    const from = currentDate.startOf('month').format('YYYY-MM-DD');
-    const to = currentDate.endOf('month').format('YYYY-MM-DD');
+    const from = currentDate.clone().startOf('month').format('YYYY-MM-DD');
+    const to = currentDate.clone().endOf('month').format('YYYY-MM-DD');
     return { from, to };
   }
   
